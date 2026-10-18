@@ -1,0 +1,3 @@
+# The build needs only provision.sh, which the Dockerfile copies in.
+*
+!provision.sh
