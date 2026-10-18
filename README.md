@@ -61,7 +61,7 @@ it:
 |---|---|
 | `org.opencontainers.image.version`, `sh.fctl.version` | fctl's version |
 | `sh.fctl.claude-code.version` | Claude Code's version |
-| `org.opencontainers.image.revision` | the commit of this repository it was built from |
+| `org.opencontainers.image.revision` | the commit of this repository it was built from; images built elsewhere have none |
 | `org.opencontainers.image.created` | when it was built |
 
 ```sh

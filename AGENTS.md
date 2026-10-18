@@ -54,8 +54,14 @@ pull request.
   both files at the root, under these names, self-contained, and working on
   Debian 12 with a user other than `agent`.
 - **The tags**: `<fctl version>` for every fctl release, `<major>.<minor>`
-  and `latest`. Hosts pull their own version's tag and fall back to
-  `latest`.
+  and `latest`. Hosts pull their own version's tag, again every 6 hours for
+  newer builds, and fall back to `latest`. They remove other versions'
+  images, and `latest` once their own version's is there.
+- **The revision label.** The Image workflow sets
+  `org.opencontainers.image.revision` on every image it publishes, and the
+  `Dockerfile` sets no labels. Hosts pull their tag again over an image, and
+  remove one, only when it has the label: an image without it was built on
+  the host, which keeps it as it is.
 - **Subscriptions only.** fctl runs Claude Code on Claude subscriptions,
   never on API billing. Never set `ANTHROPIC_*` variables, an
   `apiKeyHelper`, or Bedrock, Vertex or Foundry switches in the image.
