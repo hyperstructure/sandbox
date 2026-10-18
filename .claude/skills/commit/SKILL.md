@@ -59,11 +59,12 @@ to the fctl session that made the change is welcome.
 4. Open the pull request with a conventional title and a description. One
    change per pull request.
 5. Wait for the checks in the same turn and fix failures (below).
-6. A person merges it (squash) when the checks pass, unless they asked you
-   to merge it yourself.
+6. A person merges it (squash) when the checks pass. `main` takes a pull
+   request only once a code owner who didn't push its last commit approves
+   it, so you can merge only one a person approved, when they ask you to.
 
-Never push to `main` directly, and never commit secrets: the repository and
-the image are public.
+Never push to `main` directly (its ruleset refuses it: `.github/rulesets/`),
+and never commit secrets: the repository and the image are public.
 
 ## The checks
 

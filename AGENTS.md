@@ -96,10 +96,13 @@ hyperstructure/fctl) and, when hosts must adapt, an fctl release first.
 
 - Changes reach `main` as squash-merged pull requests whose title is a
   Conventional Commit (`feat: add PostgreSQL's client`); the Commits
-  workflow checks it. A person merges agents' pull requests unless they ask
-  the agent to. How: [.claude/skills/commit/SKILL.md](.claude/skills/commit/SKILL.md).
+  workflow checks it. A person merges agents' pull requests: `main` takes
+  a pull request only once a code owner who didn't push its last commit
+  approves it, so agents cannot merge their own. How:
+  [.claude/skills/commit/SKILL.md](.claude/skills/commit/SKILL.md).
 - Merging a change to the image publishes it within minutes, so `main` is
-  always what's published. Never push to `main` directly.
+  always what's published. Never push to `main` directly: its ruleset
+  refuses it (`.github/rulesets/`).
 - Before starting on an issue, read it with its comments
   (`gh issue view N --comments`). In a pull request, write `Fixes #N` only
   when it does everything the issue asks; otherwise `Refs #N`.
