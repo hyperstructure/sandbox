@@ -1,0 +1,36 @@
+# Pull request titles must be Conventional Commits: they become the
+# squash-merged commits on main (.claude/skills/commit/SKILL.md). Separate
+# from the other checks, so that editing a title reruns only this.
+name: Commits
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: commits-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  conventional:
+    name: Conventional Commits
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: The pull request title (it becomes the commit on main)
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          types="feat fix perf docs refactor test build ci chore revert"
+          fail() { echo "::error::$1"; exit 1; }
+          title=$(sed -E 's/ \(#[0-9]+\)$//' <<<"$TITLE")
+          shape='^([a-z0-9/-]+)(\([a-z0-9/-]+\))?!?: (.*[^[:space:]].*)$'
+          [[ $title =~ $shape ]] || fail "\`$title\` is not \`type(scope): what changed\`; types: ${types// /, }"
+          kind=${BASH_REMATCH[1]} text=${BASH_REMATCH[3]}
+          [[ " $types " == *" $kind "* ]] || fail "\`$kind\` is not a commit type; use one of: ${types// /, }"
+          [[ $text != *. ]] || fail "drop the full stop at the end"
+          (( ${#title} <= 72 )) || fail "keep it to 72 characters (${#title} now); details go in the body"
+          echo "\`$title\` is a Conventional Commit." >> "$GITHUB_STEP_SUMMARY"
