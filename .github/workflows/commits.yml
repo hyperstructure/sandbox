@@ -1,6 +1,7 @@
 # Pull request titles must be Conventional Commits: they become the
-# squash-merged commits on main (.claude/skills/commit/SKILL.md). Separate
-# from the other checks, so that editing a title reruns only this.
+# squash-merged commits on main (.claude/skills/commit/SKILL.md). The rules
+# are fctl's (xtask/src/release.rs in hyperstructure/fctl); keep them in step.
+# Separate from the other checks, so that editing a title reruns only this.
 name: Commits
 
 on:
