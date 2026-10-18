@@ -41,16 +41,17 @@ installs everything.
 | `0.4` | The newest 0.4 release. |
 | `latest` | The newest release. |
 
-Every tag is this repository's `main` with that release of fctl and the
-newest Claude Code, rebuilt as they change:
+Each image is built from this repository's `main` with that release of
+fctl and the newest Claude Code. A new fctl release gets its image within
+the hour, and the newest release's image is rebuilt as things change:
 
-- **A new fctl release** gets its image within the hour.
-- **A change merged to `main`** rebuilds the newest release's image right
-  away.
-- **A new Claude Code release** rebuilds it in the daily run, at 05:41
-  UTC. fctl turns off Claude Code's auto-updater, so an image's Claude Code
-  is as old as the image.
-- **Debian's updates** arrive with a rebuild at least once a week.
+- **A change merged to `main`**: right away.
+- **A new Claude Code release**: in the daily run, at 05:41 UTC. fctl turns
+  off Claude Code's auto-updater, so an image's Claude Code is as old as the
+  image.
+- **Debian's updates**: at least once a week.
+
+Images of earlier releases stay as they were last built.
 
 A rebuild moves the tag. To keep one build, pin its digest:
 `ghcr.io/hyperstructure/sandbox:0.4.0@sha256:…`. Its labels say what's in
@@ -108,9 +109,10 @@ RUN apt-get update \
 USER agent
 ```
 
-fctl runs it when a project's Settings → Sandbox → Image names it, or a
-host's `image` in `host.toml`: [Sandbox images](https://fctl.sh/docs/sandbox-images/)
-in fctl's docs. Apple silicon hosts need arm64 images.
+To run it in fctl, name it in a project's Settings → Sandbox → Image, or as
+`image` in a host's `host.toml`
+([Sandbox images](https://fctl.sh/docs/sandbox-images/) in fctl's docs).
+Apple silicon hosts need arm64 images.
 
 ## Building it
 
