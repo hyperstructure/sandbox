@@ -6,9 +6,9 @@ machines. Every fctl session runs in a container made from this image,
 unless its project or host names another one. The Image workflow publishes
 it as `ghcr.io/hyperstructure/sandbox`, for amd64 and arm64.
 
-This repository is public. fctl itself lives in hyperstructure/fctl, which
-is private for now, so link to https://fctl.sh rather than to its files in
-what people read here.
+This repository is public, like hyperstructure/fctl, where fctl itself
+lives: in what people read here, link to fctl's docs on https://fctl.sh and
+to its code in hyperstructure/fctl.
 
 | File | What it is |
 |---|---|
