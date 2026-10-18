@@ -38,7 +38,7 @@ on:
       - .dockerignore
       - .github/workflows/image.yml
   schedule:
-    - cron: "11 * * * *"
+    - cron: "23 * * * *"
     - cron: "41 5 * * *"
   workflow_dispatch:
     inputs:

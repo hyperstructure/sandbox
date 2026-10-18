@@ -17,7 +17,7 @@ checked with `check.sh`, and the last job tags the two as one image.
 | Trigger | Builds the newest fctl release's image when |
 |---|---|
 | A push to `main` that changes the image | the published one predates the change |
-| Every hour (minute 11) | there is none yet (a new fctl release), or it predates a change |
+| Every hour (minute 23) | there is none yet (a new fctl release), or it predates a change |
 | Every day (05:41 UTC) | as hourly, or Claude Code has a newer release, or the image is a week old |
 | `gh workflow run image.yml` | as daily; `-f version=…` for another release, `-f force=true` always |
 | A pull request that changes the image | always, with the latest fctl, without publishing |
