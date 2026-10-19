@@ -76,6 +76,10 @@ gh pr checks N --watch --fail-fast
   latest fctl and Claude Code and runs `check.sh` in each. It runs when the
   image's files or the workflow change, and takes a few minutes.
 - **Lint** runs ShellCheck and actionlint.
+- **Skills** validates every skill in `.claude/skills` against the
+  [Agent Skills specification](https://agentskills.io/specification). It
+  runs when the skills or the workflow change; its log names the file, the
+  line and the rule.
 - **Commits** checks the title. When only it fails, fix the title:
   `gh pr edit N --title "fix: …"`.
 

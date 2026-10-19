@@ -16,7 +16,7 @@ to its code in hyperstructure/fctl.
 | `provision.sh` | Installs everything, as root. The versions are at the top. |
 | `check.sh` | Checks a built image for the layout fctl and derived images rely on. |
 | `.github/workflows/image.yml` | Builds both architectures, checks them and publishes them. |
-| `.github/workflows/lint.yml`, `commits.yml` | ShellCheck and actionlint; pull request titles. |
+| `.github/workflows/lint.yml`, `commits.yml`, `skills.yml` | ShellCheck and actionlint; pull request titles; the skills, against the Agent Skills specification. |
 | `.claude/skills/` | How to change the image, publish it, and commit. |
 
 ## Commands
