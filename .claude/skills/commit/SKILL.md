@@ -80,7 +80,7 @@ gh pr checks N --watch --fail-fast
   stack and one through its standalone control plane, and screenshots, with
   hyperstructure/fctl's branch of the pull request's name when there is one,
   else its `main`. It runs when the image's files, the script or the
-  workflow change, and takes about half an hour. A step that the pull
+  workflow change, and takes about a quarter of an hour. A step that the pull
   request doesn't touch can fail because of fctl's `main`: the log names
   the step.
 - **Lint** runs ShellCheck and actionlint.

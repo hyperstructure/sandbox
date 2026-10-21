@@ -120,7 +120,7 @@ Apple silicon hosts need arm64 images.
 ```sh
 docker build -t sandbox .
 docker run --rm -i sandbox sh -s < check.sh
-docker run --rm -i --init sandbox bash -s < check-fctl.sh   # fctl's development in it, half an hour
+docker run --rm -i --init sandbox bash -s < check-fctl.sh   # fctl's development in it, 10 minutes or so
 ```
 
 `--build-arg FCTL_VERSION=0.4.0` picks the fctl release (default: the
