@@ -54,8 +54,8 @@ to the fctl session that made the change is welcome.
 1. Branch from an up-to-date `main`: `<type>/<topic>` (`feat/postgres`), or
    `fctl/<number>-<topic>` when an fctl session makes the branch.
 2. Commit as you go; the commits are squashed, so the title is what lasts.
-3. Run `shellcheck provision.sh check.sh` and `actionlint` if you have them;
-   the Lint workflow runs both anyway.
+3. Run `shellcheck provision.sh check.sh check-fctl.sh` and `actionlint` if
+   you have them; the Lint workflow runs both anyway.
 4. Open the pull request with a conventional title and a description. One
    change per pull request.
 5. Wait for the checks in the same turn and fix failures (below).
@@ -75,6 +75,14 @@ gh pr checks N --watch --fail-fast
 - **Image** builds the pull request's image for amd64 and arm64 with the
   latest fctl and Claude Code and runs `check.sh` in each. It runs when the
   image's files or the workflow change, and takes a few minutes.
+- **Develop fctl** builds the pull request's image for amd64 and arm64 and
+  runs `check-fctl.sh` in each: fctl's checks, a session through its local
+  stack and one through its standalone control plane, and screenshots, with
+  hyperstructure/fctl's branch of the pull request's name when there is one,
+  else its `main`. It runs when the image's files, the script or the
+  workflow change, and takes about a quarter of an hour. A step that the pull
+  request doesn't touch can fail because of fctl's `main`: the log names
+  the step.
 - **Lint** runs ShellCheck and actionlint.
 - **Skills** validates every skill in `.claude/skills` against the
   [Agent Skills specification](https://agentskills.io/specification). It

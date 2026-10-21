@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: ShellCheck
-        run: shellcheck --version && shellcheck provision.sh check.sh
+        run: shellcheck --version && shellcheck provision.sh check.sh check-fctl.sh
       - name: actionlint
         run: |
           archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"

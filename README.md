@@ -16,16 +16,17 @@ their own copy instead). It also works as a base for images with more tools
 
 ## What's inside
 
-- Debian 12 (bookworm), with `LANG=C.UTF-8` and `TZ=UTC`.
+- Debian 13 (trixie), with `LANG=C.UTF-8` and `TZ=UTC`.
 - Claude Code, the native build, in `~/.local/bin`: the newest release when
   the image was built.
 - fctl, the release the tag names, in `/usr/local/bin`. Agents name and
   describe their session with `fctl edit`.
 - Python 3.15.0 as `python3` and `python` for every user (uv's build of
-  CPython, in `/opt/uv/python`), and uv 0.13.1.
-- Rust 1.99.0 through rustup, with rustfmt, Clippy and the
+  CPython, in `/opt/uv/python`), and uv 0.13.4.
+- Rust 1.99.1 through rustup, with rustfmt, Clippy and the
   `wasm32-unknown-unknown` target.
-- Node.js 22 with npm and corepack, TypeScript 7.0.2 (`tsc`) and Bun 1.4.3.
+- Node.js 26 with npm and corepack 0.36.0 (with its yarn and pnpm shims),
+  TypeScript 7.0.2 (`tsc`) and Bun 1.4.3.
 - build-essential (gcc, make), cmake, pkg-config and OpenSSL's headers.
 - git, the GitHub CLI, ripgrep, fd, jq, ShellCheck, sqlite3, curl, wget,
   rsync, lsof, fuser, tree, file, unzip, zip, xz and zstd.
@@ -90,7 +91,7 @@ it.
   `cargo`, `rustup` and `bun` as `agent`.
 - **Python** is marked externally managed: packages go into a virtual
   environment (`uv venv`, `python3 -m venv`) or come with `uv run --with`.
-  Debian's Python 3.11, which Node.js depends on, stays in `/usr/bin`, after
+  Debian's Python 3.13, which Node.js depends on, stays in `/usr/bin`, after
   `/usr/local/bin` on the PATH.
 - **npm** leaves out its funding and audit notices and its update check
   (`/usr/etc/npmrc`); `npm audit` still runs when asked.
@@ -119,6 +120,7 @@ Apple silicon hosts need arm64 images.
 ```sh
 docker build -t sandbox .
 docker run --rm -i sandbox sh -s < check.sh
+docker run --rm -i --init sandbox bash -s < check-fctl.sh   # fctl's development in it, 10 minutes or so
 ```
 
 `--build-arg FCTL_VERSION=0.4.0` picks the fctl release (default: the
@@ -132,6 +134,16 @@ The Image workflow ([`.github/workflows/image.yml`](.github/workflows/image.yml)
 publishes it: each architecture builds on a runner of its own and is
 checked with `check.sh` before the two are tagged as one image. Pull
 requests that change the image build and check both without publishing.
+
+Sessions that work on fctl itself build, test and run it in the image, so
+pull requests that change it also develop fctl in both architectures' builds
+(the Develop fctl workflow, [`.github/workflows/fctl.yml`](.github/workflows/fctl.yml)):
+[`check-fctl.sh`](check-fctl.sh) runs what fctl's CI checks, a session
+through its local stack and one through its standalone control plane, an
+`npm install` that must leave its lockfile as it is, and screenshots of its
+web app with Playwright. It checks hyperstructure/fctl's branch of the pull
+request's name when there is one (an fctl session that changes both
+repositories names their branches alike), and `main` otherwise.
 
 ## Questions and changes
 

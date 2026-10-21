@@ -1,6 +1,6 @@
 ---
 name: change-the-image
-description: Add, upgrade or remove a tool in the sandbox image, or change its layout. Covers where versions live, both architectures, the Lima VM that provision.sh also provisions, what fctl and derived images rely on, the image's size, and verifying a change with a local build or the pull request's Image workflow. Use for any change to Dockerfile, provision.sh or check.sh.
+description: Add, upgrade or remove a tool in the sandbox image, or change its layout. Covers where versions live, both architectures, the Lima VM that provision.sh also provisions, what fctl and derived images rely on, the image's size, and verifying a change with a local build or the pull request's Image and Develop fctl workflows. Use for any change to Dockerfile, provision.sh, check.sh or check-fctl.sh.
 ---
 
 # Changing the image
@@ -44,11 +44,13 @@ Removing a tool breaks images and sessions that use it: a breaking change
 - **Two architectures.** Every download works on amd64 and arm64: pick the
   file with `dpkg --print-architecture` (`amd64`, `arm64`) or `uname -m`
   (`x86_64`, `aarch64`).
-- **The Lima VM.** fctl's Lima driver runs `provision.sh` in a Debian 12 VM
-  (Lima's cloud image, not `bookworm-slim`) as root, with `AGENT_USER` set
-  to the VM's user, who already exists and may not be uid 1000. Use
-  `$AGENT_USER` and `$AGENT_HOME`, never `agent` or `/home/agent`, and don't
-  rely on what only the Dockerfile sets.
+- **The Lima VM.** fctl's Lima driver runs `provision.sh` in a Debian 13 VM
+  (Lima's cloud image, not `trixie-slim`), or a Debian 12 one with Lima
+  before 2.0 and on hosts of fctl 0.14 and earlier, so keep it working on
+  both. It runs as root, with `AGENT_USER` set to the VM's user, who
+  already exists and may not be uid 1000. Use `$AGENT_USER` and
+  `$AGENT_HOME`, never `agent` or `/home/agent`, and don't rely on what
+  only the Dockerfile sets.
 - **Login shells.** Setup scripts and the Lima driver run `bash -l`, which
   reads `/etc/profile.d/fctl.sh`. Keep its PATH and the Dockerfile's
   `ENV PATH` the same.
@@ -86,7 +88,10 @@ change the next time they pull the image.
 - **In an fctl session** (no Docker): open the pull request. The Image
   workflow builds both architectures with the latest fctl and Claude Code
   and runs `check.sh` in each: `gh pr checks N --watch --fail-fast`, then
-  the run's summary for the sizes.
+  the run's summary for the sizes. The Develop fctl workflow runs
+  `check-fctl.sh` in each too: fctl's own checks, sessions and screenshots,
+  as sessions working on fctl do them, with fctl's branch of the same name
+  when there is one.
 - **With fctl:** on a host, `docker build -t sandbox:dev .` and set it as a
   project's image (Settings → Sandbox → Image), or
   `fctl host image build --source .` from a checkout, which builds it under

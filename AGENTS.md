@@ -15,7 +15,9 @@ to its code in hyperstructure/fctl.
 | `Dockerfile` | The image: runs `provision.sh`, then sets the user and the PATH. |
 | `provision.sh` | Installs everything, as root. The versions are at the top. |
 | `check.sh` | Checks a built image for the layout fctl and derived images rely on. |
+| `check-fctl.sh` | Develops fctl in a built image, as sessions working on hyperstructure/fctl do. |
 | `.github/workflows/image.yml` | Builds both architectures, checks them and publishes them. |
+| `.github/workflows/fctl.yml` | On pull requests, runs `check-fctl.sh` in both architectures' builds. |
 | `.github/workflows/lint.yml`, `commits.yml`, `skills.yml` | ShellCheck and actionlint; pull request titles; the skills, against the Agent Skills specification. |
 | `.claude/skills/` | How to change the image, publish it, and commit. |
 
@@ -25,13 +27,15 @@ to its code in hyperstructure/fctl.
 docker build -t sandbox:dev .                                  # your architecture
 docker build -t sandbox:dev --build-arg FCTL_VERSION=0.3.0 .   # with another fctl
 docker run --rm -i sandbox:dev sh -s < check.sh                # check the layout
-shellcheck provision.sh check.sh
+docker run --rm -i --init sandbox:dev bash -s < check-fctl.sh  # develop fctl in it
+shellcheck provision.sh check.sh check-fctl.sh
 actionlint                                                     # the workflows
 ```
 
 fctl sessions have no Docker. There, a pull request's Image workflow is the
 build: it builds amd64 and arm64 on runners of their own and runs `check.sh`
-in each. Watch it with `gh pr checks N --watch --fail-fast`.
+in each, and its Develop fctl workflow runs `check-fctl.sh` in each, which
+takes longer. Watch them with `gh pr checks N --watch --fail-fast`.
 
 ## What fctl relies on
 
@@ -49,10 +53,11 @@ pull request.
 - **The files fctl downloads.** `fctl host image build` downloads `main` as
   an archive and builds `Dockerfile` with the repository's root as the
   context, passing `FCTL_VERSION` and `FCTL_DOWNLOAD` as build arguments.
-  With Lima, it copies `provision.sh` into a Debian 12 VM and runs it as
+  With Lima, it copies `provision.sh` into a Debian 13 VM (Debian 12 with
+  Lima before 2.0, and on hosts of fctl 0.14 and earlier) and runs it as
   root with `AGENT_USER` set to the VM's user and the same variables. Keep
   both files at the root, under these names, self-contained, and working on
-  Debian 12 with a user other than `agent`.
+  Debian 13 and 12 with a user other than `agent`.
 - **The tags**: `<fctl version>` for every fctl release, `<major>.<minor>`
   and `latest`. Hosts pull their own version's tag, again every 6 hours for
   newer builds, and fall back to `latest`. They remove other versions'
@@ -80,14 +85,20 @@ hyperstructure/fctl) and, when hosts must adapt, an fctl release first.
 - Rust is the release fctl builds with (`rust-toolchain.toml` in
   hyperstructure/fctl), so sessions working on fctl have nothing to
   download. Bump the two together.
+- fctl's own development works in the image: sessions that work on
+  hyperstructure/fctl run its checks, its local stack, its standalone
+  control plane and its screenshots there. The Develop fctl workflow checks
+  that on pull requests with `check-fctl.sh`; when it fails, its log says
+  which step, and whether the image or fctl's `main` changed decides where
+  the fix goes.
 - Prefer Debian's packages; otherwise the project's own installer or
   release archive, pinned to a version. Remove apt's lists and other caches
   in the same step.
 - Mind the size: hosts download the image for every fctl release. Say in
   the pull request what a change adds; the Image workflow's summary lists
   each architecture's size.
-- `provision.sh` is bash with `set -euo pipefail`; `check.sh` is POSIX sh.
-  Both pass ShellCheck.
+- `provision.sh` and `check-fctl.sh` are bash with `set -euo pipefail`;
+  `check.sh` is POSIX sh. All three pass ShellCheck.
 - Workflows pin actions to a commit SHA with the version in a comment, and
   give each job only the permissions it needs.
 - Copy is plain and specific, in sentence case.
