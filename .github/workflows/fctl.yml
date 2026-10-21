@@ -1,0 +1,65 @@
+# Sessions that work on fctl itself build, test and run it in the image. On
+# pull requests that change the image, this builds it for arm64 and amd64 and
+# runs check-fctl.sh in each: what fctl's CI checks, a session through its
+# local stack and one through its standalone control plane, an npm install
+# that must leave its lockfile as it is, and screenshots of its web app with
+# Playwright, which it keeps as an artifact. It checks hyperstructure/fctl's
+# branch of the pull request's name when there is one (an fctl session that
+# changes both repositories names their branches alike), else main;
+# `gh workflow run fctl.yml -f ref=…` checks another branch with main's image.
+name: Develop fctl
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - provision.sh
+      - check-fctl.sh
+      - .dockerignore
+      - .github/workflows/fctl.yml
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The branch of hyperstructure/fctl to check (default main)
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fctl-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  develop:
+    name: Develop fctl (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the image
+        run: docker build --pull --tag sandbox:fctl .
+      # As fctl hosts start sandboxes: with an init, 4 CPUs and 8 GB.
+      - name: Develop fctl in it
+        env:
+          FCTL_REF: ${{ inputs.ref || github.head_ref || 'main' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/screenshots"
+          chmod 777 "$RUNNER_TEMP/screenshots"
+          docker run --rm -i --init --cpus 4 --memory 8g -e FCTL_REF -e OUT=/tmp/screenshots \
+            -v "$RUNNER_TEMP/screenshots:/tmp/screenshots" sandbox:fctl bash -s < check-fctl.sh
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots-${{ matrix.arch }}
+          path: ${{ runner.temp }}/screenshots
+          if-no-files-found: ignore
+          retention-days: 14

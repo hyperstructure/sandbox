@@ -120,6 +120,7 @@ Apple silicon hosts need arm64 images.
 ```sh
 docker build -t sandbox .
 docker run --rm -i sandbox sh -s < check.sh
+docker run --rm -i --init sandbox bash -s < check-fctl.sh   # fctl's development in it, half an hour
 ```
 
 `--build-arg FCTL_VERSION=0.4.0` picks the fctl release (default: the
@@ -133,6 +134,16 @@ The Image workflow ([`.github/workflows/image.yml`](.github/workflows/image.yml)
 publishes it: each architecture builds on a runner of its own and is
 checked with `check.sh` before the two are tagged as one image. Pull
 requests that change the image build and check both without publishing.
+
+Sessions that work on fctl itself build, test and run it in the image, so
+pull requests that change it also develop fctl in both architectures' builds
+(the Develop fctl workflow, [`.github/workflows/fctl.yml`](.github/workflows/fctl.yml)):
+[`check-fctl.sh`](check-fctl.sh) runs what fctl's CI checks, a session
+through its local stack and one through its standalone control plane, an
+`npm install` that must leave its lockfile as it is, and screenshots of its
+web app with Playwright. It checks hyperstructure/fctl's branch of the pull
+request's name when there is one (an fctl session that changes both
+repositories names their branches alike), and `main` otherwise.
 
 ## Questions and changes
 
