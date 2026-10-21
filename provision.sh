@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016 # single-quoted scripts expand in the agent's shell
 # Provisions an fctl agent sandbox: the tools agents need, Claude Code and
-# fctl. Used by the Dockerfile (container sandboxes) and by `fctl host image
-# build --driver lima`, which runs it in a Debian 12 VM (fctl-base) as root
-# with AGENT_USER set to the VM's user. Runs as root.
+# fctl. Used by the Dockerfile (container sandboxes, Debian 13) and by `fctl
+# host image build --driver lima`, which runs it in a Debian VM (fctl-base) as
+# root with AGENT_USER set to the VM's user: Debian 13, or 12 with Lima before
+# 2.0 and hosts of fctl 0.14 and earlier, so it works on both. Runs as root.
 #
 # FCTL_VERSION picks the fctl release and FCTL_DOWNLOAD where releases come
 # from (`fctl host image build` passes its own version and download_base);

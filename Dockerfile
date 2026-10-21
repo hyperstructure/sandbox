@@ -5,7 +5,7 @@
 #
 #   docker build -t sandbox:dev .
 #   fctl host image build          # on an fctl host, with its driver
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # The fctl release to install and where releases come from; `fctl host
 # image build` passes its own version and download_base. Empty: the latest,

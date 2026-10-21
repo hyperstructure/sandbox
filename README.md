@@ -16,7 +16,7 @@ their own copy instead). It also works as a base for images with more tools
 
 ## What's inside
 
-- Debian 12 (bookworm), with `LANG=C.UTF-8` and `TZ=UTC`.
+- Debian 13 (trixie), with `LANG=C.UTF-8` and `TZ=UTC`.
 - Claude Code, the native build, in `~/.local/bin`: the newest release when
   the image was built.
 - fctl, the release the tag names, in `/usr/local/bin`. Agents name and
@@ -91,7 +91,7 @@ it.
   `cargo`, `rustup` and `bun` as `agent`.
 - **Python** is marked externally managed: packages go into a virtual
   environment (`uv venv`, `python3 -m venv`) or come with `uv run --with`.
-  Debian's Python 3.11, which Node.js depends on, stays in `/usr/bin`, after
+  Debian's Python 3.13, which Node.js depends on, stays in `/usr/bin`, after
   `/usr/local/bin` on the PATH.
 - **npm** leaves out its funding and audit notices and its update check
   (`/usr/etc/npmrc`); `npm audit` still runs when asked.
