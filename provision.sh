@@ -16,12 +16,13 @@ AGENT_USER="${AGENT_USER:-agent}"
 # Toolchain versions; README.md lists them too. Rust is the release fctl
 # builds with (rust-toolchain.toml in hyperstructure/fctl), so sessions
 # working on fctl have nothing to download: bump the two together.
-NODE_MAJOR="${NODE_MAJOR:-22}"
+NODE_MAJOR="${NODE_MAJOR:-26}"
+COREPACK_VERSION="${COREPACK_VERSION:-0.36.0}"
 TYPESCRIPT_VERSION="${TYPESCRIPT_VERSION:-7.0.2}"
 BUN_VERSION="${BUN_VERSION:-1.4.3}"
-UV_VERSION="${UV_VERSION:-0.13.1}"
+UV_VERSION="${UV_VERSION:-0.13.4}"
 PYTHON_VERSION="${PYTHON_VERSION:-3.15.0}"
-RUST_VERSION="${RUST_VERSION:-1.99.0}"
+RUST_VERSION="${RUST_VERSION:-1.99.1}"
 FCTL_VERSION="${FCTL_VERSION:-}"
 FCTL_DOWNLOAD="${FCTL_DOWNLOAD:-}"
 CLAUDE_VERSION="${CLAUDE_VERSION:-}"
@@ -41,13 +42,14 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
   > /etc/apt/sources.list.d/github-cli.list
 
-# Node.js and TypeScript. npm leaves out its funding and audit notices and
-# its update check, which only lengthen agents' output.
+# Node.js, corepack and TypeScript. Node.js stopped shipping corepack in 25,
+# so it comes from npm, which also puts its yarn and pnpm shims on the PATH.
+# npm leaves out its funding and audit notices and its update check, which
+# only lengthen agents' output.
 curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
 apt-get install -y --no-install-recommends gh nodejs
-corepack enable || true
 npm config set --location=global fund=false audit=false update-notifier=false
-npm install -g "typescript@$TYPESCRIPT_VERSION"
+npm install -g "corepack@$COREPACK_VERSION" "typescript@$TYPESCRIPT_VERSION"
 npm cache clean --force
 
 # uv, and Python for everyone: uv's build of CPython in /opt/uv/python, as
@@ -116,4 +118,5 @@ as_agent 'ln -sf bun "$HOME/.bun/bin/bunx"'
 
 # What sessions find on the PATH.
 as_agent 'claude --version; fctl --version; python3 --version; uv --version
-  rustc --version; cargo --version; node --version; tsc --version; bun --version'
+  rustc --version; cargo --version; node --version; corepack --version; tsc --version
+  bun --version'

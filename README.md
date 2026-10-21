@@ -22,10 +22,11 @@ their own copy instead). It also works as a base for images with more tools
 - fctl, the release the tag names, in `/usr/local/bin`. Agents name and
   describe their session with `fctl edit`.
 - Python 3.15.0 as `python3` and `python` for every user (uv's build of
-  CPython, in `/opt/uv/python`), and uv 0.13.1.
-- Rust 1.99.0 through rustup, with rustfmt, Clippy and the
+  CPython, in `/opt/uv/python`), and uv 0.13.4.
+- Rust 1.99.1 through rustup, with rustfmt, Clippy and the
   `wasm32-unknown-unknown` target.
-- Node.js 22 with npm and corepack, TypeScript 7.0.2 (`tsc`) and Bun 1.4.3.
+- Node.js 26 with npm and corepack 0.36.0 (with its yarn and pnpm shims),
+  TypeScript 7.0.2 (`tsc`) and Bun 1.4.3.
 - build-essential (gcc, make), cmake, pkg-config and OpenSSL's headers.
 - git, the GitHub CLI, ripgrep, fd, jq, ShellCheck, sqlite3, curl, wget,
   rsync, lsof, fuser, tree, file, unzip, zip, xz and zstd.
