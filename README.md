@@ -26,7 +26,7 @@ their own copy instead). It also works as a base for images with more tools
 - Rust 1.99.1 through rustup, with rustfmt, Clippy and the
   `wasm32-unknown-unknown` target.
 - Node.js 26 with npm and corepack 0.36.0 (with its yarn and pnpm shims),
-  TypeScript 7.0.2 (`tsc`) and Bun 1.4.3.
+  TypeScript 7.0.2 (`tsc`) and Bun 1.4.4.
 - build-essential (gcc, make), cmake, pkg-config and OpenSSL's headers.
 - git, the GitHub CLI, ripgrep, fd, jq, ShellCheck, sqlite3, curl, wget,
   rsync, lsof, fuser, tree, file, unzip, zip, xz and zstd.
