@@ -31,8 +31,9 @@ their own copy instead). It also works as a base for images with more tools
   WebKit in `~/.cache/ms-playwright`, and the system libraries and fonts
   (emoji, Chinese, Japanese and Thai among them) that its Chromium, Firefox
   and WebKit need ([Browsers](#browsers)).
-- ffmpeg, ImageMagick (`magick`), pngquant and Xvfb (`xvfb-run`), for
-  recordings, images and headed browsers.
+- ffmpeg, ImageMagick (`convert`, `identify`, `compare`, `montage`),
+  pngquant and Xvfb (`xvfb-run`), for recordings, images and headed
+  browsers.
 - build-essential (gcc, make), cmake, pkg-config and OpenSSL's headers.
 - git, the GitHub CLI, ripgrep, fd, jq, ShellCheck, sqlite3, curl, wget,
   rsync, lsof, fuser, tree, file, unzip, zip, xz and zstd.

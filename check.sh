@@ -34,7 +34,7 @@ done
 [ -w "$HOME/workspace" ] || fail "$HOME/workspace is not writable"
 for tool in sh tail git gh claude fctl python3 python uv rustup cargo rustc node npm corepack tsc bun \
   make cc cmake pkg-config rg fd jq shellcheck sqlite3 curl wget rsync zip tree \
-  playwright xvfb-run ffmpeg magick pngquant; do
+  playwright xvfb-run ffmpeg convert pngquant; do
   command -v "$tool" >/dev/null 2>&1 || fail "$tool is not on the PATH"
 done
 [ "$(command -v claude)" = "$HOME/.local/bin/claude" ] || fail "claude is $(command -v claude), not ~/.local/bin/claude"
