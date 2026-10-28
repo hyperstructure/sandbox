@@ -1,6 +1,7 @@
 # The default sandbox for fctl sessions: Debian with git, gh, build tools,
-# Python and uv, Rust, Node.js, TypeScript, Bun, Claude Code and fctl
-# (README.md lists the versions). Sessions run as the `agent` user.
+# Python and uv, Rust, Node.js, TypeScript, Bun, Playwright and its browsers,
+# Claude Code and fctl (README.md lists the versions). Sessions run as the
+# `agent` user.
 # .github/workflows/image.yml publishes it as ghcr.io/hyperstructure/sandbox.
 #
 #   docker build -t sandbox:dev .

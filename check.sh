@@ -33,7 +33,8 @@ done
 [ -d "$HOME/workspace" ] || fail "$HOME/workspace is missing"
 [ -w "$HOME/workspace" ] || fail "$HOME/workspace is not writable"
 for tool in sh tail git gh claude fctl python3 python uv rustup cargo rustc node npm corepack tsc bun \
-  make cc cmake pkg-config rg fd jq shellcheck sqlite3 curl wget rsync zip tree; do
+  make cc cmake pkg-config rg fd jq shellcheck sqlite3 curl wget rsync zip tree \
+  playwright xvfb-run ffmpeg magick pngquant; do
   command -v "$tool" >/dev/null 2>&1 || fail "$tool is not on the PATH"
 done
 [ "$(command -v claude)" = "$HOME/.local/bin/claude" ] || fail "claude is $(command -v claude), not ~/.local/bin/claude"
@@ -43,6 +44,13 @@ for tool in cargo rustc rustfmt cargo-clippy python3 tsc bun; do
   "$tool" --version >/dev/null 2>&1 || fail "$tool --version fails"
 done
 pkg-config --exists openssl || fail "OpenSSL's headers are missing"
+# Playwright's browsers are agent's, where Playwright looks for them with HOME
+# alone, and start with the libraries and fonts the image has.
+[ -w "$HOME/.cache/ms-playwright" ] || fail "$HOME/.cache/ms-playwright is missing or not writable"
+for browser in chromium webkit; do
+  out=$(playwright screenshot --browser "$browser" 'data:text/html,<p>fctl</p>' "/tmp/check-$browser.png" 2>&1) ||
+    fail "Playwright's $browser takes no screenshot: $out"
+done
 
 # `2.1.302 (Claude Code)` and `fctl 0.3.0`.
 claude=$(claude --version)

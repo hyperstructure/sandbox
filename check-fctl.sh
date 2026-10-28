@@ -51,11 +51,14 @@ main() {
   done
   cargo xtask dev --smoke --server http://localhost:8787
 
+  # The image's version of Playwright, whose browsers and their libraries are
+  # there: nothing to download and no sudo.
+  local version
+  version=$(playwright --version)
   mkdir -p "$HOME/screenshots"
   cd "$HOME/screenshots"
   npm init -y >/dev/null
-  npm install --no-audit --no-fund playwright
-  npx playwright install --with-deps chromium
+  npm install --no-audit --no-fund "playwright@${version#Version }"
   shoot >shoot.mjs
   node shoot.mjs http://localhost:8787/ home-light.png
   node shoot.mjs http://localhost:8787/ home-dark-390.png dark 390x844
