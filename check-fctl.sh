@@ -43,19 +43,24 @@ main() {
   FCTL_SETUP_TOKEN=dev-setup-token cargo xtask serve >"$HOME/serve.log" 2>&1 &
   server=$!
   trap stop_server EXIT
+  # It builds the control plane first; its log is shown if it fails.
+  echo "Waiting for cargo xtask serve to answer on port 8787 (20 minutes at most)"
   local deadline=$((SECONDS + 1200))
-  until curl -fsS -o /dev/null http://localhost:8787/api/v1/health; do
+  until curl -fs -o /dev/null http://localhost:8787/api/v1/health; do
     kill -0 "$server" 2>/dev/null || { cat "$HOME/serve.log"; fail "cargo xtask serve stopped"; }
     [ "$SECONDS" -lt "$deadline" ] || { cat "$HOME/serve.log"; fail "cargo xtask serve didn't answer"; }
     sleep 5
   done
   cargo xtask dev --smoke --server http://localhost:8787
 
+  # The image's version of Playwright, whose browsers and their libraries are
+  # there: nothing to download and no sudo.
+  local version
+  version=$(playwright --version)
   mkdir -p "$HOME/screenshots"
   cd "$HOME/screenshots"
   npm init -y >/dev/null
-  npm install --no-audit --no-fund playwright
-  npx playwright install --with-deps chromium
+  npm install --no-audit --no-fund "playwright@${version#Version }"
   shoot >shoot.mjs
   node shoot.mjs http://localhost:8787/ home-light.png
   node shoot.mjs http://localhost:8787/ home-dark-390.png dark 390x844

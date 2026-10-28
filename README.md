@@ -1,8 +1,8 @@
 # Sandbox
 
 The image [fctl](https://fctl.sh) runs its agents in: Debian with Claude
-Code, git, the GitHub CLI, Python, Rust, Node.js, TypeScript and Bun, for
-arm64 and amd64.
+Code, git, the GitHub CLI, Python, Rust, Node.js, TypeScript, Bun, and
+Playwright with its browsers, for arm64 and amd64.
 
 ```sh
 docker pull ghcr.io/hyperstructure/sandbox
@@ -27,6 +27,13 @@ their own copy instead). It also works as a base for images with more tools
   `wasm32-unknown-unknown` target.
 - Node.js 26 with npm and corepack 0.36.0 (with its yarn and pnpm shims),
   TypeScript 7.0.2 (`tsc`) and Bun 1.4.4.
+- Playwright 1.64.1 (`playwright`), with its headless Chromium and its
+  WebKit in `~/.cache/ms-playwright`, and the system libraries and fonts
+  (emoji, Chinese, Japanese and Thai among them) that its Chromium, Firefox
+  and WebKit need ([Browsers](#browsers)).
+- ffmpeg, ImageMagick (`convert`, `identify`, `compare`, `montage`),
+  pngquant and Xvfb (`xvfb-run`), for recordings, images and headed
+  browsers.
 - build-essential (gcc, make), cmake, pkg-config and OpenSSL's headers.
 - git, the GitHub CLI, ripgrep, fd, jq, ShellCheck, sqlite3, curl, wget,
   rsync, lsof, fuser, tree, file, unzip, zip, xz and zstd.
@@ -85,16 +92,42 @@ it.
   `/etc/profile.d/fctl.sh` sets it for login shells. fctl-agent passes
   Claude the PATH, HOME and the locale but none of the image's other
   environment variables, so every tool works from the PATH alone.
-- **Rust and Bun** belong to `agent`, in `~/.rustup`, `~/.cargo` and
-  `~/.bun`, so agents add toolchains, targets and global tools without sudo
-  (`cargo install`, `bun add -g`, and for Python `uv tool install`). Run
-  `cargo`, `rustup` and `bun` as `agent`.
+- **Rust, Bun and Playwright's browsers** belong to `agent`, in
+  `~/.rustup`, `~/.cargo`, `~/.bun` and `~/.cache/ms-playwright`, so
+  agents add toolchains, targets, global tools and browsers without sudo
+  (`cargo install`, `bun add -g`, `playwright install firefox`, and for
+  Python `uv tool install`). Run `cargo`, `rustup`, `bun` and
+  `playwright install` as `agent`.
 - **Python** is marked externally managed: packages go into a virtual
   environment (`uv venv`, `python3 -m venv`) or come with `uv run --with`.
   Debian's Python 3.13, which Node.js depends on, stays in `/usr/bin`, after
   `/usr/local/bin` on the PATH.
 - **npm** leaves out its funding and audit notices and its update check
   (`/usr/etc/npmrc`); `npm audit` still runs when asked.
+
+## Browsers
+
+Playwright's headless Chromium and its WebKit, which stands in for
+Safari, are installed for the `playwright` on the PATH, with the system
+libraries that its Chromium, Firefox and WebKit need. From the command
+line:
+
+```sh
+playwright screenshot --browser webkit --color-scheme dark http://localhost:5173 home.png
+```
+
+A script imports Playwright from a `node_modules` of its own. Installing
+the image's version there finds its browsers in place:
+
+```sh
+npm install "playwright@$(playwright --version | cut -d' ' -f2)"
+```
+
+Other versions, a project's `@playwright/test` among them, download their
+browsers with `npx playwright install`, and so do the browsers the image
+leaves out: Firefox, and Chromium's full build, which headed runs under
+`xvfb-run` and `channel: "chromium"` take. The libraries are there, so
+none of it needs sudo or `--with-deps`.
 
 ## Building on it
 

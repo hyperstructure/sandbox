@@ -58,6 +58,13 @@ Removing a tool breaks images and sessions that use it: a breaking change
   `apt-get install` needs its own `apt-get update` and cleanup.
 - **Python is externally managed.** No `pip install` into the system: use
   `uv tool install` (as the agent) or a Debian package.
+- **Playwright's version is its browsers' and their libraries'.** Bumping
+  `PLAYWRIGHT_VERSION` moves all three: `playwright install-deps` takes the
+  libraries from Playwright's own list for the Debian release it runs on
+  (Lima's Debian 12 included), and the global `playwright` installs the
+  browsers into the agent's `~/.cache/ms-playwright`. Playwright removes
+  browsers that no installed copy of it uses whenever it installs others,
+  so the copy that installs them must stay in the image.
 - **No auto-updates and no daemons.** fctl turns off Claude Code's
   auto-updater, and sessions start only fctl-agent; a tool that expects a
   service running won't find one.

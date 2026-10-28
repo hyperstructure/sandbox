@@ -24,6 +24,9 @@ BUN_VERSION="${BUN_VERSION:-1.4.4}"
 UV_VERSION="${UV_VERSION:-0.13.4}"
 PYTHON_VERSION="${PYTHON_VERSION:-3.15.0}"
 RUST_VERSION="${RUST_VERSION:-1.99.1}"
+# Playwright's version picks its browsers' builds and the system libraries
+# they need, which come with it.
+PLAYWRIGHT_VERSION="${PLAYWRIGHT_VERSION:-1.64.1}"
 FCTL_VERSION="${FCTL_VERSION:-}"
 FCTL_DOWNLOAD="${FCTL_DOWNLOAD:-}"
 CLAUDE_VERSION="${CLAUDE_VERSION:-}"
@@ -34,7 +37,8 @@ apt-get install -y --no-install-recommends \
   ca-certificates curl wget git gnupg less openssh-client procps psmisc lsof sudo \
   rsync unzip xz-utils zip zstd \
   build-essential cmake pkg-config libssl-dev \
-  jq ripgrep fd-find tree file shellcheck sqlite3
+  jq ripgrep fd-find tree file shellcheck sqlite3 \
+  ffmpeg imagemagick pngquant
 # Debian calls fd `fdfind`.
 ln -sf /usr/bin/fdfind /usr/local/bin/fd
 
@@ -43,15 +47,20 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
   > /etc/apt/sources.list.d/github-cli.list
 
-# Node.js, corepack and TypeScript. Node.js stopped shipping corepack in 25,
-# so it comes from npm, which also puts its yarn and pnpm shims on the PATH.
-# npm leaves out its funding and audit notices and its update check, which
-# only lengthen agents' output.
+# Node.js, corepack, TypeScript and Playwright. Node.js stopped shipping
+# corepack in 25, so it comes from npm, which also puts its yarn and pnpm
+# shims on the PATH. npm leaves out its funding and audit notices and its
+# update check, which only lengthen agents' output.
 curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
 apt-get install -y --no-install-recommends gh nodejs
 npm config set --location=global fund=false audit=false update-notifier=false
-npm install -g "corepack@$COREPACK_VERSION" "typescript@$TYPESCRIPT_VERSION"
+npm install -g "corepack@$COREPACK_VERSION" "typescript@$TYPESCRIPT_VERSION" \
+  "playwright@$PLAYWRIGHT_VERSION"
 npm cache clean --force
+# The system libraries and fonts that Playwright's Chromium, Firefox and
+# WebKit need, from its own list for this Debian release, and Xvfb for
+# headed browsers. The agent's browsers come below.
+playwright install-deps chromium firefox webkit
 
 # uv, and Python for everyone: uv's build of CPython in /opt/uv/python, as
 # python3 and python in /usr/local/bin.
@@ -117,7 +126,15 @@ as_agent 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs |
 as_agent 'curl -fsSL https://bun.sh/install | bash -s "bun-v$1"' "$BUN_VERSION"
 as_agent 'ln -sf bun "$HOME/.bun/bin/bunx"'
 
+# Playwright's headless Chromium and its WebKit, in ~/.cache/ms-playwright,
+# where Playwright looks for them with HOME alone (fctl leaves
+# PLAYWRIGHT_BROWSERS_PATH unset for an image that has them there): agents
+# add the other browsers and other versions' builds without sudo. They stay
+# when other versions install theirs, for as long as the global Playwright
+# that installed them is there.
+as_agent 'playwright install --only-shell --no-progress chromium webkit'
+
 # What sessions find on the PATH.
 as_agent 'claude --version; fctl --version; python3 --version; uv --version
   rustc --version; cargo --version; node --version; corepack --version; tsc --version
-  bun --version'
+  bun --version; playwright --version'
