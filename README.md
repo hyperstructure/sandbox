@@ -50,8 +50,9 @@ installs everything.
 | `latest` | The newest release. |
 
 Each image is built from this repository's `main` with that release of
-fctl and the newest Claude Code. A new fctl release gets its image within
-the hour, and the newest release's image is rebuilt as things change:
+fctl and the newest Claude Code. A new fctl release gets its image minutes
+after it is published: fctl's Release workflow starts the build. The
+newest release's image is rebuilt as things change:
 
 - **A change merged to `main`**: right away.
 - **A new Claude Code release**: in the daily run, at 05:41 UTC. fctl turns
@@ -165,8 +166,10 @@ with `provision.sh`.
 
 The Image workflow ([`.github/workflows/image.yml`](.github/workflows/image.yml))
 publishes it: each architecture builds on a runner of its own and is
-checked with `check.sh` before the two are tagged as one image. Pull
-requests that change the image build and check both without publishing.
+checked with `check.sh` before the two are tagged as one image. fctl's
+Release workflow starts it for each release; it also looks for releases
+without an image every hour. Pull requests that change the image build and
+check both without publishing.
 
 Sessions that work on fctl itself build, test and run it in the image, so
 pull requests that change it also develop fctl in both architectures' builds

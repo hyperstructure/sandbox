@@ -67,6 +67,10 @@ pull request.
   `Dockerfile` sets no labels. Hosts pull their tag again over an image, and
   remove one, only when it has the label: an image without it was built on
   the host, which keeps it as it is.
+- **The Image workflow's file name and its `version` input.** fctl's
+  Release workflow starts `.github/workflows/image.yml` with
+  `-f version=<fctl version>` for each release, as the fctl-actions GitHub
+  App, and fails its Sandbox image job when the run fails.
 - **Subscriptions only.** fctl runs Claude Code on Claude subscriptions,
   never on API billing. Never set `ANTHROPIC_*` variables, an
   `apiKeyHelper`, or Bedrock, Vertex or Foundry switches in the image.
