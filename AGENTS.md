@@ -70,6 +70,10 @@ pull request.
   `Dockerfile` sets no labels. Hosts pull their tag again over an image, and
   remove one, only when it has the label: an image without it was built on
   the host, which keeps it as it is.
+- **The Image workflow's file name and its `version` input.** fctl's
+  Release workflow starts `.github/workflows/image.yml` with
+  `-f version=<fctl version>` for each release, as the fctl-actions GitHub
+  App, and fails its Sandbox image job when the run fails.
 - **The kernel image.** fctl's firecracker driver pulls
   `ghcr.io/hyperstructure/sandbox-kernel:<version>`, the version each fctl
   release pins, and boots the file `/vmlinux` in it: an uncompressed kernel
