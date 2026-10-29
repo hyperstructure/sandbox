@@ -14,13 +14,13 @@ checked with `check.sh`, and the last job tags the two as one image.
 
 ## When it runs
 
-| Trigger | Builds the newest fctl release's image when |
+| Trigger | Builds |
 |---|---|
-| An fctl release | as daily, for that release (fctl's Release workflow passes `-f version=…`) |
-| A push to `main` that changes the image | the published one predates the change |
-| Every hour (minute 23) | there is none yet (a release whose own run failed), or it predates a change |
-| Every day (05:41 UTC) | as hourly, or Claude Code has a newer release, or the image is a week old |
-| `gh workflow run image.yml` | as daily; `-f version=…` for another release, `-f force=true` always |
+| An fctl release | that release's image, as `gh workflow run image.yml -f version=…` does |
+| A push to `main` that changes the image | the newest release's, when the published one predates the change |
+| Every hour (minute 23) | the newest release's, when there is none yet (its release's own run failed) or it predates a change |
+| Every day (05:41 UTC) | as hourly, and when Claude Code has a newer release or the image is a week old |
+| `gh workflow run image.yml` | as daily; `-f version=…` another release's, `-f force=true` even a current one |
 | A pull request that changes the image | always, with the latest fctl, without publishing |
 
 Every build installs that fctl release from https://fctl.sh/releases and
@@ -31,10 +31,12 @@ fctl's Release workflow (`.github/workflows/release.yml` in
 hyperstructure/fctl) starts the run for each release as soon as the release
 is on fctl.sh, as the organization's fctl-actions GitHub App, and its
 Sandbox image job waits for it: a failed run fails that job, and its
-summary links the run. "What to build" gives fctl.sh two minutes to show a
-release, and counts one that fctl.sh's `latest`, cached for a minute,
-doesn't name yet as the newest. GitHub starts the hourly run hours late at
-times, so it is only the fallback.
+summary links the run. Runs here go one at a time, and GitHub keeps only
+one of them waiting, so a newer run cancels the release's while it waits;
+the job then starts it again, up to three times. To stop a release's run
+for good, cancel that job first. "What to build" gives fctl.sh two minutes
+to show a release. GitHub starts the hourly run hours late at times, so it
+is only the fallback.
 
 ## Tags and labels
 
@@ -42,7 +44,12 @@ times, so it is only the fallback.
 - `<major>.<minor>` (`0.4`): moves only when the build is the newest patch
   of its minor. fctl's releases count up one patch at a time and fctl.sh
   keeps them all, so the workflow asks fctl.sh for the next patch.
-- `latest`: moves only for the newest release.
+- `latest`: moves only for the newest release, the one fctl.sh's `latest`
+  names.
+
+A release later than the one fctl.sh's `latest` names moves both without
+asking: fctl.sh caches `latest` for a minute, and the release's own run can
+start before that minute is out.
 
 The image and its index carry `org.opencontainers.image.version` (fctl's
 version), `sh.fctl.claude-code.version`, `org.opencontainers.image.revision`

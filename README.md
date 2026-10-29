@@ -50,9 +50,9 @@ installs everything.
 | `latest` | The newest release. |
 
 Each image is built from this repository's `main` with that release of
-fctl and the newest Claude Code. A new fctl release gets its image about
-ten minutes after it is published: fctl's Release workflow starts the build.
-The newest release's image is rebuilt as things change:
+fctl and the newest Claude Code. A new fctl release gets its image minutes
+after it is published: fctl's Release workflow starts the build. The
+newest release's image is rebuilt as things change:
 
 - **A change merged to `main`**: right away.
 - **A new Claude Code release**: in the daily run, at 05:41 UTC. fctl turns

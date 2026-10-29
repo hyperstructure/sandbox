@@ -4,9 +4,10 @@
 # repository's main with a release of fctl and the newest Claude Code.
 #
 # - fctl's Release workflow starts it with `-f version=…` for each release,
-#   as soon as fctl.sh has the release, and waits for it (as the fctl-actions
-#   GitHub App, in hyperstructure/fctl's .github/workflows/release.yml): keep
-#   this file's name and its `version` input.
+#   as soon as fctl.sh has the release, and waits for it, starting it again
+#   when a newer run cancels it while it waits (as the fctl-actions GitHub
+#   App, in hyperstructure/fctl's .github/workflows/release.yml): keep this
+#   file's name and its `version` input.
 # - Every hour it builds the latest fctl release's image when there is none
 #   yet (the release's own run failed, or didn't start), or when the image
 #   predates the last change to it on main. A push to main that changes the
@@ -120,19 +121,17 @@ jobs:
           push=no
           if [ "$EVENT" != pull_request ] && [ "$GITHUB_REF" = refs/heads/main ]; then push=yes; fi
 
-          # The newest release moves :latest and its minor's tag, and so does
-          # one that fctl.sh's latest, cached for a minute, doesn't name yet.
           # fctl's releases count up one patch at a time and fctl.sh keeps them
-          # all, so an older one is the newest of its minor unless the next
-          # patch is there. Only an older one looks it up: where it is asked
-          # for, fctl.sh caches that a version has no files for a day, so a
-          # patch looked up before its release could seem missing there after.
+          # all, so this one is the newest of its minor unless the next patch is
+          # there. A release later than fctl.sh's latest, which fctl.sh caches
+          # for a minute, came out moments ago and is the newest.
           IFS=. read -r major minor patch <<<"$version"
           tags="$IMAGE:$version"
-          if [ "$(printf '%s\n' "$latest" "$version" | sort -V | tail -n 1)" = "$version" ]; then
+          if [ "$version" != "$latest" ] && [ "$(printf '%s\n' "$latest" "$version" | sort -V | tail -n 1)" = "$version" ]; then
             tags="$tags $IMAGE:$major.$minor $IMAGE:latest"
-          elif ! released "$major.$minor.$((patch + 1))"; then
-            tags="$tags $IMAGE:$major.$minor"
+          else
+            if ! released "$major.$minor.$((patch + 1))"; then tags="$tags $IMAGE:$major.$minor"; fi
+            if [ "$version" = "$latest" ]; then tags="$tags $IMAGE:latest"; fi
           fi
 
           what="fctl $version with Claude Code $claude"
