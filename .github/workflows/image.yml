@@ -3,9 +3,14 @@
 # and :latest when that release is the newest they cover. An image is this
 # repository's main with a release of fctl and the newest Claude Code.
 #
+# - fctl's Release workflow starts it with `-f version=…` for each release,
+#   as soon as fctl.sh has the release, and waits for it (as the fctl-actions
+#   GitHub App, in hyperstructure/fctl's .github/workflows/release.yml): keep
+#   this file's name and its `version` input.
 # - Every hour it builds the latest fctl release's image when there is none
-#   yet, or when the image predates the last change to it on main. A push to
-#   main that changes the image does the same at once.
+#   yet (the release's own run failed, or didn't start), or when the image
+#   predates the last change to it on main. A push to main that changes the
+#   image does the same at once.
 # - Every day it also rebuilds it when Claude Code has a newer release than
 #   the one inside, or when the image is a week old (for Debian's updates):
 #   fctl turns off Claude Code's auto-updater, so an image's Claude Code is as
@@ -103,18 +108,32 @@ jobs:
           version=${VERSION:-$latest} version=${version#v}
           [[ $version =~ $semver ]] || { echo "::error::$version is not a version like 0.3.0"; exit 1; }
           released() { curl -fs --retry 3 -o /dev/null "$releases/v$1/manifest.json"; }
-          released "$version" || { echo "::error::fctl $version is not on fctl.sh/releases"; exit 1; }
+          # fctl's Release workflow starts this as soon as it has published the
+          # release, which some of fctl.sh's locations may not show for a minute.
+          for try in 1 2 3 4 5; do
+            if released "$version"; then break; fi
+            if [ "$try" = 5 ]; then echo "::error::fctl $version is not on fctl.sh/releases"; exit 1; fi
+            sleep 30
+          done
 
           # Only main publishes; pull requests and other branches build and check.
           push=no
           if [ "$EVENT" != pull_request ] && [ "$GITHUB_REF" = refs/heads/main ]; then push=yes; fi
 
+          # The newest release moves :latest and its minor's tag, and so does
+          # one that fctl.sh's latest, cached for a minute, doesn't name yet.
           # fctl's releases count up one patch at a time and fctl.sh keeps them
-          # all, so this one is the newest of its minor unless the next patch is there.
+          # all, so an older one is the newest of its minor unless the next
+          # patch is there. Only an older one looks it up: where it is asked
+          # for, fctl.sh caches that a version has no files for a day, so a
+          # patch looked up before its release could seem missing there after.
           IFS=. read -r major minor patch <<<"$version"
           tags="$IMAGE:$version"
-          if ! released "$major.$minor.$((patch + 1))"; then tags="$tags $IMAGE:$major.$minor"; fi
-          if [ "$version" = "$latest" ]; then tags="$tags $IMAGE:latest"; fi
+          if [ "$(printf '%s\n' "$latest" "$version" | sort -V | tail -n 1)" = "$version" ]; then
+            tags="$tags $IMAGE:$major.$minor $IMAGE:latest"
+          elif ! released "$major.$minor.$((patch + 1))"; then
+            tags="$tags $IMAGE:$major.$minor"
+          fi
 
           what="fctl $version with Claude Code $claude"
           build=yes why="it was started with force=true"

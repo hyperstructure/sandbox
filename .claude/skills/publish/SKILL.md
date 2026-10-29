@@ -16,8 +16,9 @@ checked with `check.sh`, and the last job tags the two as one image.
 
 | Trigger | Builds the newest fctl release's image when |
 |---|---|
+| An fctl release | as daily, for that release (fctl's Release workflow passes `-f version=…`) |
 | A push to `main` that changes the image | the published one predates the change |
-| Every hour (minute 23) | there is none yet (a new fctl release), or it predates a change |
+| Every hour (minute 23) | there is none yet (a release whose own run failed), or it predates a change |
 | Every day (05:41 UTC) | as hourly, or Claude Code has a newer release, or the image is a week old |
 | `gh workflow run image.yml` | as daily; `-f version=…` for another release, `-f force=true` always |
 | A pull request that changes the image | always, with the latest fctl, without publishing |
@@ -25,6 +26,15 @@ checked with `check.sh`, and the last job tags the two as one image.
 Every build installs that fctl release from https://fctl.sh/releases and
 the newest Claude Code (https://downloads.claude.ai), and passes both
 versions to `check.sh`.
+
+fctl's Release workflow (`.github/workflows/release.yml` in
+hyperstructure/fctl) starts the run for each release as soon as the release
+is on fctl.sh, as the organization's fctl-actions GitHub App, and its
+Sandbox image job waits for it: a failed run fails that job, and its
+summary links the run. "What to build" gives fctl.sh two minutes to show a
+release, and counts one that fctl.sh's `latest`, cached for a minute,
+doesn't name yet as the newest. GitHub starts the hourly run hours late at
+times, so it is only the fallback.
 
 ## Tags and labels
 
@@ -94,12 +104,19 @@ behind, which is harmless).
   public. A package starts private when the workflow first creates it; a
   person makes it public in the package's settings (Danger zone → Change
   visibility), and the organization must allow public packages.
-- **The schedule stopped**: GitHub turns off scheduled workflows in a public
-  repository after 60 days without activity, and emails a warning first.
-  A person turns it back on with
-  `gh workflow enable image.yml -R hyperstructure/sandbox`, then runs it by
-  hand. Meanwhile a new fctl release has no image of its own, and its hosts
-  start sessions from `latest`.
+- **fctl's Sandbox image job failed**: its summary links the run it
+  started here, and the items above say what to do. A fix merged to `main`
+  publishes the newest release's image at once. When the job failed before
+  it started a run, its token is at fault: fctl's `release` skill says what
+  to do, and meanwhile
+  `gh workflow run image.yml -R hyperstructure/sandbox -f version=X.Y.Z`
+  builds the image.
+- **The workflow stopped**: GitHub turns off scheduled workflows in a public
+  repository after 60 days without activity, and emails a warning first;
+  fctl's Release workflow can't start it then either. A person turns it
+  back on with `gh workflow enable image.yml -R hyperstructure/sandbox`,
+  then runs it by hand. Meanwhile a new fctl release has no image of its
+  own, and its hosts start sessions from `latest`.
 
 Never delete a published version that has a tag: hosts pull by tag, and a
 broken one is fixed by a rebuild.
