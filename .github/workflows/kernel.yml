@@ -1,14 +1,15 @@
 # Builds the kernel that fctl's firecracker driver boots its sandboxes with,
 # for amd64 and arm64, boots it in Firecracker where the runner has KVM, and
-# publishes it as ghcr.io/hyperstructure/sandbox-kernel:<Linux version> and
+# publishes it as ghcr.io/hyperstructure/sandbox-kernel:<kernel/VERSION> and
 # :<major>.<minor>: an image whose /vmlinux is the kernel. fctl pins the
 # version its hosts pull.
 #
-# - A push to main that changes kernel/ builds and publishes the version in
-#   kernel/VERSION, unless it is published already from that change or a
-#   later one.
-# - `gh workflow run kernel.yml` does the same; `-f force=true` builds even
-#   when it is current.
+# - A push to main that changes kernel/ publishes the version in
+#   kernel/VERSION when it isn't published yet. A published version is never
+#   built again: hosts that pinned it keep the kernel they have, so a change
+#   to how it is built comes with a new version (6.18.59-2 for the same
+#   Linux release).
+# - `gh workflow run kernel.yml` does the same, for a run that failed.
 # - Pull requests that change kernel/ build and check it without publishing.
 #
 # Each architecture builds on its own runner and is pushed by digest, without
@@ -26,11 +27,6 @@ on:
       - kernel/**
       - .github/workflows/kernel.yml
   workflow_dispatch:
-    inputs:
-      force:
-        description: Build even when the published kernel is current
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -60,38 +56,33 @@ jobs:
       push: ${{ steps.plan.outputs.push }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
       - name: Version and tags
         id: plan
         env:
           EVENT: ${{ github.event_name }}
-          FORCE: ${{ inputs.force && 'yes' || '' }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          # The Linux release, and a build number when the build changed without one.
           version=$(tr -d '[:space:]' < kernel/VERSION)
-          [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::kernel/VERSION says '$version'"; exit 1; }
-          IFS=. read -r major minor _ <<<"$version"
+          [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]] || { echo "::error::kernel/VERSION says '$version'"; exit 1; }
+          IFS=. read -r major minor _ <<<"${version%%-*}"
           tags="$IMAGE:$version $IMAGE:$major.$minor"
 
           # Only main publishes; pull requests and other branches build and check.
           push=no
           if [ "$EVENT" != pull_request ] && [ "$GITHUB_REF" = refs/heads/main ]; then push=yes; fi
 
-          build=yes why="it was started with force=true"
-          if [ "$push" = yes ] && [ -z "$FORCE" ]; then
+          build=yes why="$IMAGE:$version isn't published yet"
+          if [ "$push" = yes ]; then
             echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
-            if index=$(docker buildx imagetools inspect --raw "$IMAGE:$version" 2>/dev/null); then
-              revision=$(jq -r '.annotations["org.opencontainers.image.revision"] // ""' <<<"$index")
-              # Current when built from the last commit that changed it, or a later one.
-              changed=$(git log -1 --format=%H -- kernel .github/workflows/kernel.yml)
-              if git merge-base --is-ancestor "$changed" "$revision" 2>/dev/null; then
-                build=no why="$IMAGE:$version is current (built from ${revision:0:7})"
-              else
-                why="$IMAGE:$version predates $(git log -1 --format='%h ("%s")' "$changed")"
-              fi
-            else
-              why="$IMAGE:$version isn't published yet"
+            # Published: never again. GHCR denies a package it doesn't have
+            # yet; anything else (a 5xx, the network) stops the run, rather
+            # than publish over what may be there.
+            if inspected=$(docker buildx imagetools inspect --raw "$IMAGE:$version" 2>&1); then
+              build=no why="$IMAGE:$version is published already: a change to how it is built takes a new version in kernel/VERSION"
+            elif ! grep -qiE "not found|manifest unknown|name unknown|denied" <<<"$inspected"; then
+              echo "::error::Reading $IMAGE:$version: $inspected"
+              exit 1
             fi
           fi
 
@@ -143,6 +134,7 @@ jobs:
             --output "type=local,dest=$RUNNER_TEMP/out"
           ls -l "$RUNNER_TEMP/out"
       - name: Boot it
+        shell: bash
         run: |
           # GitHub's x86_64 runners have KVM, for root only.
           if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi

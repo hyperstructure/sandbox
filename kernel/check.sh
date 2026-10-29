@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Boots the kernel at $1 in Firecracker, as fctl's firecracker driver boots
-# its sandboxes (an initramfs, a vsock), and checks that it reaches
-# userspace with what fctl-agent's init needs: ext4, overlayfs, a vsock and
-# TAP devices. Needs /dev/kvm; without it, says so and checks nothing.
+# its sandboxes (an initramfs, a drive, a vsock), and checks that it reaches
+# userspace with what fctl-agent's init needs: virtio's MMIO devices, its
+# drive mounted as ext4 with an overlay on it, vsock's transport and TAP
+# devices. Needs /dev/kvm and mkfs.ext4; without KVM, says so and checks
+# nothing.
 set -euo pipefail
 
 kernel=$(realpath "$1")
@@ -29,22 +31,38 @@ echo "$sum  $archive" | sha256sum --check --quiet
 tar -xzf "$archive" "release-v$firecracker_version-$arch/firecracker-v$firecracker_version-$arch"
 firecracker="$work/release-v$firecracker_version-$arch/firecracker-v$firecracker_version-$arch"
 
-# An initramfs of a static busybox whose init looks around, says what it
-# found and resets the VM, which ends Firecracker.
+# A drive, as an image's filesystem is: ext4 with a file on it.
+mkdir drive
+echo hello > drive/hello
+truncate -s 16M drive.ext4
+"$(command -v mkfs.ext4 || echo /usr/sbin/mkfs.ext4)" -q -F -d drive drive.ext4
+
+# An initramfs of a static busybox whose init tries what fctl-agent's init
+# does, says what fails and resets the VM, which ends Firecracker.
 mkdir -p root/bin root/dev root/proc root/sys
 cp "$(command -v busybox)" root/bin/busybox
 cat > root/init <<'INIT'
 #!/bin/busybox sh
-/bin/busybox mount -t proc proc /proc
-/bin/busybox mount -t devtmpfs dev /dev
-for fs in ext4 overlay; do
-  /bin/busybox grep -qw "$fs" /proc/filesystems || echo "fctl-kernel: no $fs"
-done
-for dev in /dev/vsock /dev/net/tun; do
-  [ -e "$dev" ] || echo "fctl-kernel: no $dev"
-done
-echo "fctl-kernel: booted $(/bin/busybox uname -r)"
-/bin/busybox reboot -f
+export PATH=/bin
+/bin/busybox --install -s /bin
+mount -t proc proc /proc
+mount -t devtmpfs dev /dev
+mount -t sysfs sys /sys
+missing() { echo "fctl-kernel: no $1"; }
+# The drive: virtio's MMIO transport and its block driver, and ext4.
+mkdir -p /image /upper /merged
+mount -t ext4 -o ro /dev/vda /image || missing "ext4 on /dev/vda"
+# overlayfs, which lays a sandbox's disk over its image.
+mount -t tmpfs tmpfs /upper && mkdir -p /upper/root /upper/work
+mount -t overlay overlay -o lowerdir=/image,upperdir=/upper/root,workdir=/upper/work /merged ||
+  missing overlayfs
+grep -q hello /merged/hello 2>/dev/null || missing "the drive's file through the overlay"
+# vsock's virtio transport, bound to the VM's device, and TAP devices.
+ls /sys/bus/virtio/drivers/vmw_vsock_virtio_transport 2>/dev/null | grep -q virtio ||
+  missing "vsock's virtio transport"
+[ -e /dev/net/tun ] || missing /dev/net/tun
+echo "fctl-kernel: booted $(uname -r)"
+reboot -f
 INIT
 chmod 755 root/init
 (cd root && find . | cpio --quiet -o -H newc) > initrd.cpio
@@ -54,7 +72,7 @@ if [ "$arch" = x86_64 ]; then args="$args reboot=k i8042.noaux i8042.nomux i8042
 cat > vm.json <<JSON
 {
   "boot-source": {"kernel_image_path": "$kernel", "initrd_path": "$work/initrd.cpio", "boot_args": "$args"},
-  "drives": [],
+  "drives": [{"drive_id": "vda", "path_on_host": "$work/drive.ext4", "is_root_device": false, "is_read_only": true}],
   "machine-config": {"vcpu_count": 1, "mem_size_mib": 256},
   "vsock": {"guest_cid": 3, "uds_path": "$work/v.sock"}
 }
@@ -71,4 +89,4 @@ if grep -q "fctl-kernel: no" console.log; then
   echo "The kernel lacks what fctl-agent's init needs." >&2
   exit 1
 fi
-echo "Booted in Firecracker $firecracker_version, with ext4, overlayfs, a vsock and TAP devices."
+echo "Booted in Firecracker $firecracker_version: a drive with ext4 and an overlay on it, vsock's transport and TAP devices work."

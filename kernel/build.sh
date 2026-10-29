@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the kernel that fctl's firecracker driver boots sandboxes with, for
-# this machine's architecture: the Linux release in VERSION, configured as
+# this machine's architecture: the Linux release in VERSION (whose build
+# number, after a dash, changes nothing here), configured as
 # Firecracker configures its CI's guests (microvm-<arch>.config, from
 # Firecracker's resources/guest_configs), with fctl.config on top. Writes
 # the kernel to $OUT/vmlinux (./out unless OUT says otherwise), and its
@@ -10,6 +11,7 @@ set -euo pipefail
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 out=${OUT:-$PWD/out}
 version=$(tr -d '[:space:]' < "$here/VERSION")
+version=${version%%-*}
 
 case "$(uname -m)" in
   x86_64) config=microvm-x86_64.config target=vmlinux built=vmlinux ;;

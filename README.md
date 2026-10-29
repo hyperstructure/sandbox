@@ -192,15 +192,15 @@ It is Linux's long-term release in [`kernel/VERSION`](kernel/VERSION),
 configured as Firecracker configures its own CI's guests
 ([`kernel/microvm-x86_64.config`](kernel/microvm-x86_64.config) and
 [`kernel/microvm-aarch64.config`](kernel/microvm-aarch64.config), from
-Firecracker's `resources/guest_configs`), with what fctl adds in
-[`kernel/fctl.config`](kernel/fctl.config): built in, without modules, with
-ext4, overlayfs, vsock, TAP devices, cgroups, nftables and the balloon's
-free page reporting. The image holds the kernel as `/vmlinux`, and its
+Firecracker's `resources/guest_configs`): every driver built in, with ext4,
+overlayfs, vsock, TAP devices, cgroups, nftables and the balloon's free
+page reporting. [`kernel/fctl.config`](kernel/fctl.config) adds only
+`/proc/config.gz`. The image holds the kernel as `/vmlinux`, and its
 configuration as `/vmlinux.config`.
 
 | Tag | Kernel |
 |---|---|
-| `6.18.59` | Linux 6.18.59. Each fctl release pins the one its hosts boot. |
+| `6.18.59` | Linux 6.18.59. Each fctl release pins the one its hosts boot. A tag never moves: a change to how the kernel is built takes a new one, `6.18.59-2` for the same release. |
 | `6.18` | The newest 6.18 built here. |
 
 ```sh
@@ -210,9 +210,10 @@ kernel/check.sh out/vmlinux                       # boots it in Firecracker, wit
 ```
 
 The Kernel workflow ([`.github/workflows/kernel.yml`](.github/workflows/kernel.yml))
-builds it for both architectures, boots it where the runner has KVM, and
-publishes it when `kernel/` changes on `main`. A new kernel release is a
-change to `kernel/VERSION` and `kernel/SHA256SUMS` (from kernel.org's
+builds it for both architectures, boots it where the runner has KVM (amd64's),
+and publishes a version of `kernel/VERSION` that isn't published yet when
+`kernel/` changes on `main`. A new kernel release is a change to
+`kernel/VERSION` and `kernel/SHA256SUMS` (from kernel.org's
 `sha256sums.asc`), and then one to the version fctl pins.
 
 ## Questions and changes

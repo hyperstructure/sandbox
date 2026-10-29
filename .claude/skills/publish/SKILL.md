@@ -1,6 +1,6 @@
 ---
 name: publish
-description: How the sandbox image reaches ghcr.io/hyperstructure/sandbox, and how to rebuild or repair it. Covers what starts the Image workflow (fctl releases, merges, Claude Code releases, the weekly rebuild), its tags and labels, running it by hand, checking a published image with or without Docker, and what to do when a run fails or the schedule stops. Use when asked to publish, rebuild or check the image, after merging a change to it, or when an fctl release has no image.
+description: How the sandbox image reaches ghcr.io/hyperstructure/sandbox, and the kernel of fctl's Firecracker sandboxes ghcr.io/hyperstructure/sandbox-kernel, and how to rebuild or repair them. Covers what starts the Image workflow (fctl releases, merges, Claude Code releases, the weekly rebuild), its tags and labels, running it by hand, checking a published image with or without Docker, and what to do when a run fails or the schedule stops. Use when asked to publish, rebuild or check the image, after merging a change to it, or when an fctl release has no image.
 ---
 
 # Publishing the image
@@ -72,6 +72,20 @@ curl -fsS -H "Authorization: Bearer $token" \
   jq '{annotations, platforms: [.manifests[].platform | "\(.os)/\(.architecture)"]}'
 curl -fsS -H "Authorization: Bearer $token" https://ghcr.io/v2/hyperstructure/sandbox/tags/list
 ```
+
+## The kernel
+
+The Kernel workflow (`.github/workflows/kernel.yml`) publishes
+`ghcr.io/hyperstructure/sandbox-kernel`, the kernel of fctl's Firecracker
+sandboxes, from `main` only, the same way: it builds each architecture on
+its own runner, boots it with `kernel/check.sh` where the runner has KVM
+(amd64's), pushes both by digest and tags them as one image,
+`<kernel/VERSION>` and `<major>.<minor>`. It runs when a push to `main`
+changes `kernel/` and that version isn't published yet; a published
+version is never built again, since hosts pin it and keep what they
+pulled, so a change to the build takes a new version (`6.18.59-2`).
+`gh workflow run kernel.yml` runs it again after a failure. Check what's
+published as for the image, with `sandbox-kernel` in its name.
 
 ## When something fails
 
