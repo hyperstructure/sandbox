@@ -18,6 +18,8 @@ to its code in hyperstructure/fctl.
 | `check-fctl.sh` | Develops fctl in a built image, as sessions working on hyperstructure/fctl do. |
 | `.github/workflows/image.yml` | Builds both architectures, checks them and publishes them. |
 | `.github/workflows/fctl.yml` | On pull requests, runs `check-fctl.sh` in both architectures' builds. |
+| `kernel/` | The kernel of fctl's Firecracker sandboxes: `build.sh` builds the Linux release in `VERSION` with Firecracker's guest configuration, `check.sh` boots it in Firecracker. |
+| `.github/workflows/kernel.yml` | Builds the kernel for both architectures, boots it where there is KVM, and publishes it as `ghcr.io/hyperstructure/sandbox-kernel`. |
 | `.github/workflows/lint.yml`, `commits.yml`, `skills.yml` | ShellCheck and actionlint; pull request titles; the skills, against the Agent Skills specification. |
 | `.claude/skills/` | How to change the image, publish it, and commit. |
 
@@ -28,7 +30,8 @@ docker build -t sandbox:dev .                                  # your architectu
 docker build -t sandbox:dev --build-arg FCTL_VERSION=0.3.0 .   # with another fctl
 docker run --rm -i sandbox:dev sh -s < check.sh                # check the layout
 docker run --rm -i --init sandbox:dev bash -s < check-fctl.sh  # develop fctl in it
-shellcheck provision.sh check.sh check-fctl.sh
+kernel/build.sh && kernel/check.sh out/vmlinux                 # the kernel (Linux; booting needs /dev/kvm)
+shellcheck provision.sh check.sh check-fctl.sh kernel/build.sh kernel/check.sh
 actionlint                                                     # the workflows
 ```
 
@@ -67,6 +70,15 @@ pull request.
   `Dockerfile` sets no labels. Hosts pull their tag again over an image, and
   remove one, only when it has the label: an image without it was built on
   the host, which keeps it as it is.
+- **The kernel image.** fctl's firecracker driver pulls
+  `ghcr.io/hyperstructure/sandbox-kernel:<version>`, the version each fctl
+  release pins, and boots the file `/vmlinux` in it: an uncompressed kernel
+  (x86_64's ELF `vmlinux`, aarch64's `Image`) with everything built in, and
+  with ext4, overlayfs, virtio's MMIO devices, vsock and TAP devices, which
+  its init needs (`kernel/check.sh` checks them). Publish a tag before fctl
+  pins it, and never move a version's tag to another kernel. The same
+  hosts boot this image's layout as a VM, with fctl-agent as its init
+  rather than a container's: the layout above holds for them too.
 - **Subscriptions only.** fctl runs Claude Code on Claude subscriptions,
   never on API billing. Never set `ANTHROPIC_*` variables, an
   `apiKeyHelper`, or Bedrock, Vertex or Foundry switches in the image.
