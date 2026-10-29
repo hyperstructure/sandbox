@@ -54,8 +54,9 @@ to the fctl session that made the change is welcome.
 1. Branch from an up-to-date `main`: `<type>/<topic>` (`feat/postgres`), or
    `fctl/<number>-<topic>` when an fctl session makes the branch.
 2. Commit as you go; the commits are squashed, so the title is what lasts.
-3. Run `shellcheck provision.sh check.sh check-fctl.sh` and `actionlint` if
-   you have them; the Lint workflow runs both anyway.
+3. Run `shellcheck provision.sh check.sh check-fctl.sh kernel/build.sh
+   kernel/check.sh` and `actionlint` if you have them; the Lint workflow
+   runs both anyway.
 4. Open the pull request with a conventional title and a description. One
    change per pull request.
 5. Wait for the checks in the same turn and fix failures (below).
@@ -83,6 +84,10 @@ gh pr checks N --watch --fail-fast
   workflow change, and takes about a quarter of an hour. A step that the pull
   request doesn't touch can fail because of fctl's `main`: the log names
   the step.
+- **Kernel** builds the kernel of fctl's Firecracker sandboxes for amd64
+  and arm64 and boots it with `kernel/check.sh` where the runner has KVM
+  (amd64's). It runs when `kernel/` or its workflow change, and takes about
+  ten minutes.
 - **Lint** runs ShellCheck and actionlint.
 - **Skills** validates every skill in `.claude/skills` against the
   [Agent Skills specification](https://agentskills.io/specification). It

@@ -181,6 +181,44 @@ web app with Playwright. It checks hyperstructure/fctl's branch of the pull
 request's name when there is one (an fctl session that changes both
 repositories names their branches alike), and `main` otherwise.
 
+## The kernel
+
+fctl's `firecracker` driver runs each session in a
+[Firecracker](https://firecracker-microvm.github.io) microVM, made from this
+image, which boots a kernel published from here too:
+
+```sh
+docker buildx imagetools inspect ghcr.io/hyperstructure/sandbox-kernel:6.18.59
+```
+
+It is Linux's long-term release in [`kernel/VERSION`](kernel/VERSION),
+configured as Firecracker configures its own CI's guests
+([`kernel/microvm-x86_64.config`](kernel/microvm-x86_64.config) and
+[`kernel/microvm-aarch64.config`](kernel/microvm-aarch64.config), from
+Firecracker's `resources/guest_configs`): every driver built in, with ext4,
+overlayfs, vsock, TAP devices, cgroups, nftables and the balloon's free
+page reporting. [`kernel/fctl.config`](kernel/fctl.config) adds only
+`/proc/config.gz`. The image holds the kernel as `/vmlinux`, and its
+configuration as `/vmlinux.config`.
+
+| Tag | Kernel |
+|---|---|
+| `6.18.59` | Linux 6.18.59. Each fctl release pins the one its hosts boot. A tag never moves: a change to how the kernel is built takes a new one, `6.18.59-2` for the same release. |
+| `6.18` | The newest 6.18 built here. |
+
+```sh
+kernel/build.sh                                   # out/vmlinux, on Linux, for this machine
+docker build --output type=local,dest=out kernel  # the same, in a container
+kernel/check.sh out/vmlinux                       # boots it in Firecracker, with /dev/kvm
+```
+
+The Kernel workflow ([`.github/workflows/kernel.yml`](.github/workflows/kernel.yml))
+builds it for both architectures, boots it where the runner has KVM (amd64's),
+and publishes a version of `kernel/VERSION` that isn't published yet when
+`kernel/` changes on `main`. A new kernel release is a change to
+`kernel/VERSION` and `kernel/SHA256SUMS` (from kernel.org's
+`sha256sums.asc`), and then one to the version fctl pins.
+
 ## Questions and changes
 
 Open an issue for a tool the image lacks or something that doesn't work in
@@ -190,7 +228,10 @@ agents.
 
 ## License
 
-The files in this repository are under the [MIT license](LICENSE). The image
-contains software under its own licenses, among them Claude Code, which
+The files in this repository are under the [MIT license](LICENSE), but for
+`kernel/microvm-*.config`, which come from Firecracker, under the Apache
+License 2.0. The image contains software under its own licenses, among them
+Claude Code, which
 [Anthropic's terms](https://code.claude.com/docs/en/legal-and-compliance)
-govern.
+govern. The kernel is Linux, under the GPL 2.0: its source is the release on
+kernel.org that `kernel/VERSION` names, built with `kernel/build.sh`.
