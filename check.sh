@@ -30,6 +30,11 @@ for dir in "$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.bun/bin" /opt/fctl/bin;
   done
 done
 [ -d /opt/fctl/bin ] || fail "/opt/fctl/bin is missing"
+# fctl runs fctl-agent from there as root: agent may not replace it.
+for dir in /opt/fctl /opt/fctl/bin; do
+  [ "$(stat -c %u "$dir")" = 0 ] || fail "$dir is not root's"
+  [ ! -w "$dir" ] || fail "agent may write to $dir"
+done
 [ -d "$HOME/workspace" ] || fail "$HOME/workspace is missing"
 [ -w "$HOME/workspace" ] || fail "$HOME/workspace is not writable"
 for tool in sh tail git gh claude fctl python3 python uv rustup cargo rustc node npm corepack tsc bun \
