@@ -89,6 +89,8 @@ it.
   `agent`, in `~/workspace`: Claude Code and everything it runs. fctl-agent,
   which supervises them, runs as root, so that their commands can't stop it
   by accident.
+- **`/var/cache/fctl`** is `agent`'s: fctl mounts a project's package
+  caches there, and Docker gives a new cache volume the directory's owner.
 - **The PATH** starts with `~/.local/bin` (Claude Code and uv's tools),
   `~/.cargo/bin` and `~/.bun/bin`, then `/opt/fctl/bin`, root's, where fctl
   copies its supervisor, fctl-agent, when a session starts. The image sets it, and
