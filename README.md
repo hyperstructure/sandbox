@@ -192,7 +192,7 @@ fctl's `firecracker` driver runs each session in a
 image, which boots a kernel published from here too:
 
 ```sh
-docker buildx imagetools inspect ghcr.io/hyperstructure/sandbox-kernel:6.18.59
+docker buildx imagetools inspect ghcr.io/hyperstructure/sandbox-kernel:6.18.59-1
 ```
 
 It is Linux's long-term release in [`kernel/VERSION`](kernel/VERSION),
@@ -201,13 +201,16 @@ configured as Firecracker configures its own CI's guests
 [`kernel/microvm-aarch64.config`](kernel/microvm-aarch64.config), from
 Firecracker's `resources/guest_configs`): every driver built in, with ext4,
 overlayfs, vsock, TAP devices, cgroups, nftables and the balloon's free
-page reporting. [`kernel/fctl.config`](kernel/fctl.config) adds only
-`/proc/config.gz`. The image holds the kernel as `/vmlinux`, and its
-configuration as `/vmlinux.config`.
+page reporting. [`kernel/fctl.config`](kernel/fctl.config) adds
+`/proc/config.gz`, and 9p with its fd transport, with which a sandbox
+mounts its project's package caches over the VM's vsock (Firecracker has
+no virtio-fs or virtio-9p). The image holds the kernel as `/vmlinux`, and
+its configuration as `/vmlinux.config`.
 
 | Tag | Kernel |
 |---|---|
-| `6.18.59` | Linux 6.18.59. Each fctl release pins the one its hosts boot. A tag never moves: a change to how the kernel is built takes a new one, `6.18.59-2` for the same release. |
+| `6.18.59-1` | Linux 6.18.59 with 9p, for the package caches. Each fctl release pins the one its hosts boot. A tag never moves: a change to how the kernel is built takes a new one, `6.18.59-2` for the same release. |
+| `6.18.59` | Linux 6.18.59, without 9p: the one fctl pinned before. |
 | `6.18` | The newest 6.18 built here. |
 
 ```sh
