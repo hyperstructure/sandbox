@@ -35,6 +35,7 @@ for dir in /opt/fctl /opt/fctl/bin; do
   [ "$(stat -c %u "$dir")" = 0 ] || fail "$dir is not root's"
   [ ! -w "$dir" ] || fail "agent may write to $dir"
 done
+[ -w /var/cache/fctl ] || fail "agent may not write to /var/cache/fctl"
 [ -d "$HOME/workspace" ] || fail "$HOME/workspace is missing"
 [ -w "$HOME/workspace" ] || fail "$HOME/workspace is not writable"
 for tool in sh tail git gh claude fctl python3 python uv rustup cargo rustc node npm corepack tsc bun \

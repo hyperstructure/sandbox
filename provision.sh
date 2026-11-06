@@ -81,6 +81,10 @@ chmod 0440 "/etc/sudoers.d/90-fctl-$AGENT_USER"
 mkdir -p /opt/fctl/bin
 chown -R root:root /opt/fctl
 chmod 755 /opt/fctl /opt/fctl/bin
+# The agent user's: fctl mounts a project's package caches here, and Docker
+# gives a new volume the owner of the directory it is mounted on, so a host
+# that runs nothing as root in its sandboxes needn't chown it.
+install -d -o "$AGENT_USER" -g "$(id -g "$AGENT_USER")" /var/cache/fctl
 
 # fctl, for everyone on the machine: agents name and describe their session
 # with `fctl edit`. A version that is not published (a development build of

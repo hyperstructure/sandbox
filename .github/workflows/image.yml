@@ -247,6 +247,11 @@ jobs:
           ARCH: ${{ matrix.arch }}
         run: |
           docker run --rm -i -e FCTL_VERSION="$VERSION" -e CLAUDE_VERSION="$CLAUDE" "$CHECK" sh -s < check.sh
+          # A new volume at /var/cache/fctl, as fctl mounts package caches,
+          # is agent's without a chown.
+          cache="fctl-check-cache-$ARCH-$GITHUB_RUN_ID"
+          docker run --rm --mount "type=volume,source=$cache,target=/var/cache/fctl" "$CHECK" touch /var/cache/fctl/written
+          docker volume rm "$cache"
           docker image inspect --format '{{.Size}}' "$CHECK" |
             awk -v arch="$ARCH" '{ printf "%s: %.2f GB\n", arch, $1 / 1e9 }' >> "$GITHUB_STEP_SUMMARY"
       - name: Note its digest
