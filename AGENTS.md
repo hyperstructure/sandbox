@@ -80,7 +80,8 @@ pull request.
   `ghcr.io/hyperstructure/sandbox-kernel:<version>`, the version each fctl
   release pins, and boots the file `/vmlinux` in it: an uncompressed kernel
   (x86_64's ELF `vmlinux`, aarch64's `Image`) with everything built in, and
-  with ext4, overlayfs, virtio's MMIO devices, vsock and TAP devices, which
+  with ext4, overlayfs, virtio's MMIO devices, vsock, TAP devices and 9p
+  with its fd transport (for the package caches, from `6.18.59-1`), which
   its init needs (`kernel/check.sh` checks them). Publish a tag before fctl
   pins it. A tag never moves (the Kernel workflow builds no published
   version again): a change to how the kernel is built takes a new version

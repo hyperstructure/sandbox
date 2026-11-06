@@ -2,9 +2,9 @@
 # Boots the kernel at $1 in Firecracker, as fctl's firecracker driver boots
 # its sandboxes (an initramfs, a drive, a vsock), and checks that it reaches
 # userspace with what fctl-agent's init needs: virtio's MMIO devices, its
-# drive mounted as ext4 with an overlay on it, vsock's transport and TAP
-# devices. Needs /dev/kvm and mkfs.ext4; without KVM, says so and checks
-# nothing.
+# drive mounted as ext4 with an overlay on it, vsock's transport, TAP
+# devices and 9p with its fd transport. Needs /dev/kvm and mkfs.ext4;
+# without KVM, says so and checks nothing.
 set -euo pipefail
 
 kernel=$(realpath "$1")
@@ -61,6 +61,13 @@ grep -q hello /merged/hello 2>/dev/null || missing "the drive's file through the
 ls /sys/bus/virtio/drivers/vmw_vsock_virtio_transport 2>/dev/null | grep -q virtio ||
   missing "vsock's virtio transport"
 [ -e /dev/net/tun ] || missing /dev/net/tun
+# 9p and its fd transport, with which the VM mounts the package caches the
+# host serves over its vsock. A mount over /dev/null fails, but without the
+# transport the kernel says it can't find it.
+grep -qw 9p /proc/filesystems || missing 9p
+mkdir -p /share
+mount -t 9p -o trans=fd,rfdno=0,wfdno=1 none /share </dev/null >/dev/null 2>&1
+dmesg | grep -q "Could not find request transport" && missing "9p's fd transport"
 echo "fctl-kernel: booted $(uname -r)"
 reboot -f
 INIT
@@ -89,4 +96,4 @@ if grep -q "fctl-kernel: no" console.log; then
   echo "The kernel lacks what fctl-agent's init needs." >&2
   exit 1
 fi
-echo "Booted in Firecracker $firecracker_version: a drive with ext4 and an overlay on it, vsock's transport and TAP devices work."
+echo "Booted in Firecracker $firecracker_version: a drive with ext4 and an overlay on it, vsock's transport, TAP devices and 9p's fd transport work."
