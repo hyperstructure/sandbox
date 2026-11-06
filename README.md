@@ -86,10 +86,12 @@ it.
 
 - **The user** is `agent`, uid 1000, with the home directory `/home/agent`
   and sudo without a password: the sandbox is the boundary. Sessions run as
-  `agent`, in `~/workspace`.
+  `agent`, in `~/workspace`: Claude Code and everything it runs. fctl-agent,
+  which supervises them, runs as root, so that their commands can't stop it
+  by accident.
 - **The PATH** starts with `~/.local/bin` (Claude Code and uv's tools),
-  `~/.cargo/bin` and `~/.bun/bin`, then `/opt/fctl/bin`, where fctl copies
-  its supervisor, fctl-agent, when a session starts. The image sets it, and
+  `~/.cargo/bin` and `~/.bun/bin`, then `/opt/fctl/bin`, root's, where fctl
+  copies its supervisor, fctl-agent, when a session starts. The image sets it, and
   `/etc/profile.d/fctl.sh` sets it for login shells. fctl-agent passes
   Claude the PATH, HOME and the locale but none of the image's other
   environment variables, so every tool works from the PATH alone.

@@ -76,8 +76,11 @@ if ! id "$AGENT_USER" >/dev/null 2>&1; then
 fi
 echo "$AGENT_USER ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/90-fctl-$AGENT_USER"
 chmod 0440 "/etc/sudoers.d/90-fctl-$AGENT_USER"
+# Root's: fctl runs its supervisor, fctl-agent, as root from there, so the
+# agent user must not put another in its place.
 mkdir -p /opt/fctl/bin
-chown -R "$AGENT_USER" /opt/fctl
+chown -R root:root /opt/fctl
+chmod 755 /opt/fctl /opt/fctl/bin
 
 # fctl, for everyone on the machine: agents name and describe their session
 # with `fctl edit`. A version that is not published (a development build of

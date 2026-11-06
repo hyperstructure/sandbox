@@ -48,7 +48,8 @@ pull request.
 
 - **The layout** that `check.sh` checks and README.md describes: the `agent`
   user (uid 1000, home `/home/agent`, sudo without a password),
-  `~/workspace`, `/opt/fctl/bin` owned by `agent`, and `~/.local/bin`,
+  `~/workspace`, `/opt/fctl/bin` owned by root (fctl runs fctl-agent as
+  root from there, and gives it to root itself too), and `~/.local/bin`,
   `~/.cargo/bin`, `~/.bun/bin` and `/opt/fctl/bin` first on the PATH, both
   in the image (`ENV PATH`) and in login shells (`/etc/profile.d/fctl.sh`).
   fctl-agent passes Claude the PATH, HOME and the locale and nothing else
