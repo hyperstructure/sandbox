@@ -153,6 +153,27 @@ To run it in fctl, name it in a project's Settings → Sandbox → Image, or as
 ([Sandbox images](https://fctl.sh/docs/sandbox-images/) in fctl's docs).
 Apple silicon hosts need arm64 images.
 
+## Another base
+
+An image that doesn't start from this one, such as a company's own on
+Ubuntu, runs fctl sessions once it has fctl, Claude Code, git, gh, bash and
+a user other than root. It needs no fctl-agent: the host copies its own
+into each sandbox when a session starts there.
+[`examples/ubuntu/Dockerfile`](examples/ubuntu/Dockerfile) makes Ubuntu
+24.04 into such an image, to add your own packages and steps to, and
+[`examples/check.sh`](examples/check.sh) checks an image for what fctl
+needs, as the user sessions run as:
+
+```sh
+docker build -t my-sandbox examples/ubuntu
+docker run --rm -i --entrypoint sh my-sandbox -s < examples/check.sh
+```
+
+The Examples workflow builds and checks the example for both
+architectures when it changes. fctl's docs explain each step, and what to
+do on other distributions:
+[An image from another base](https://fctl.sh/docs/sandbox-images/#an-image-from-another-base).
+
 ## Building it
 
 ```sh
