@@ -1,0 +1,55 @@
+# Builds the images in examples/, which fctl's docs show (Sandbox images, An
+# image from another base), for amd64 and arm64, and checks each with
+# examples/check.sh, as the user fctl sessions run as. Nothing is published.
+name: Examples
+
+on:
+  pull_request:
+    paths:
+      - examples/**
+      - .github/workflows/examples.yml
+  push:
+    branches: [main]
+    paths:
+      - examples/**
+      - .github/workflows/examples.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: examples-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: ${{ matrix.example }} (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [ubuntu]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build
+        env:
+          EXAMPLE: ${{ matrix.example }}
+        run: docker build --pull -t "example:$EXAMPLE" "examples/$EXAMPLE"
+      - name: Check it
+        env:
+          EXAMPLE: ${{ matrix.example }}
+        run: |
+          docker run --rm -i "example:$EXAMPLE" sh -s < examples/check.sh
+          # A new volume at /var/cache/fctl, as fctl mounts package caches,
+          # is the user's without a chown.
+          cache="fctl-example-cache-$EXAMPLE-$GITHUB_RUN_ID"
+          docker run --rm --mount "type=volume,source=$cache,target=/var/cache/fctl" "example:$EXAMPLE" touch /var/cache/fctl/written
+          docker volume rm "$cache"

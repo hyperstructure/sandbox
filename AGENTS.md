@@ -16,8 +16,10 @@ to its code in hyperstructure/fctl.
 | `provision.sh` | Installs everything, as root. The versions are at the top. |
 | `check.sh` | Checks a built image for the layout fctl and derived images rely on. |
 | `check-fctl.sh` | Develops fctl in a built image, as sessions working on hyperstructure/fctl do. |
+| `examples/` | Images that don't start from this one, which fctl's docs show (`ubuntu/Dockerfile`), and `check.sh`, which checks any image for what fctl needs of it. |
 | `.github/workflows/image.yml` | Builds both architectures, checks them and publishes them. |
 | `.github/workflows/fctl.yml` | On pull requests, runs `check-fctl.sh` in both architectures' builds. |
+| `.github/workflows/examples.yml` | Builds the examples for both architectures and checks them with `examples/check.sh`, when they change. |
 | `kernel/` | The kernel of fctl's Firecracker sandboxes: `build.sh` builds the Linux release in `VERSION` with Firecracker's guest configuration, `check.sh` boots it in Firecracker. |
 | `.github/workflows/kernel.yml` | Builds the kernel for both architectures, boots it where there is KVM, and publishes it as `ghcr.io/hyperstructure/sandbox-kernel`. |
 | `.github/workflows/lint.yml`, `commits.yml`, `skills.yml` | ShellCheck and actionlint; pull request titles; the skills, against the Agent Skills specification. |
@@ -31,7 +33,7 @@ docker build -t sandbox:dev --build-arg FCTL_VERSION=0.3.0 .   # with another fc
 docker run --rm -i sandbox:dev sh -s < check.sh                # check the layout
 docker run --rm -i --init sandbox:dev bash -s < check-fctl.sh  # develop fctl in it
 kernel/build.sh && kernel/check.sh out/vmlinux                 # the kernel (Linux; booting needs /dev/kvm)
-shellcheck provision.sh check.sh check-fctl.sh kernel/build.sh kernel/check.sh
+shellcheck provision.sh check.sh check-fctl.sh examples/check.sh kernel/build.sh kernel/check.sh
 actionlint                                                     # the workflows
 ```
 
