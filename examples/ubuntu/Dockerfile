@@ -3,7 +3,7 @@
 # explain each step: https://fctl.sh/docs/sandbox-images/#an-image-from-another-base
 #
 #   docker build -t my-sandbox examples/ubuntu
-#   docker run --rm -i my-sandbox sh -s < examples/check.sh
+#   docker run --rm -i --entrypoint sh my-sandbox -s < examples/check.sh
 FROM ubuntu:24.04
 
 # A download piped into a shell fails the step when it fails.

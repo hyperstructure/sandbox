@@ -166,7 +166,7 @@ needs, as the user sessions run as:
 
 ```sh
 docker build -t my-sandbox examples/ubuntu
-docker run --rm -i my-sandbox sh -s < examples/check.sh
+docker run --rm -i --entrypoint sh my-sandbox -s < examples/check.sh
 ```
 
 The Examples workflow builds and checks the example for both

@@ -1,9 +1,10 @@
 #!/bin/sh
 # Checks an image that doesn't start from this one for what fctl needs of
 # it (fctl's docs: https://fctl.sh/docs/sandbox-images/#what-an-image-needs).
-# Runs inside the image as its user, as sessions do:
+# Runs inside the image as its user, in place of its ENTRYPOINT, as sessions
+# do:
 #
-#   docker run --rm -i IMAGE sh -s < examples/check.sh
+#   docker run --rm -i --entrypoint sh IMAGE -s < examples/check.sh
 #
 # It fails on what sessions can't do without, warns about the rest, and needs
 # the network, to reach GitHub as git does.
@@ -25,7 +26,7 @@ older() {
 
 # What the host runs in the sandbox itself, by the system's own directories.
 [ -x /bin/sh ] || fail "/bin/sh is missing"
-for tool in tail id mkdir chown chmod mv rm stat; do
+for tool in tail id cat mkdir chown chmod mv rm stat; do
   found=
   for dir in /usr/sbin /usr/bin /sbin /bin; do
     [ ! -x "$dir/$tool" ] || found=yes
