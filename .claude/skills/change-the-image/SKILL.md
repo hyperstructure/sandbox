@@ -5,8 +5,11 @@ description: Add, upgrade or remove a tool in the sandbox image, or change its l
 
 # Changing the image
 
-- `provision.sh` installs everything, as root; the Dockerfile only runs it
-  and sets the user and the PATH. The versions are at the top, as
+- `provision.sh` installs everything, as root, in steps: a `step_`
+  function each, run in the order `STEPS` lists them, or only those named
+  as its arguments. The Dockerfile runs each step in a `RUN` of its own, so
+  that each makes a layer, and sets the user and the PATH; the Lima driver
+  runs the script without arguments. The versions are at the top, as
   `NAME="${NAME:-default}"`, so a build can override one.
 - `check.sh` is the layout fctl and images built `FROM` this one rely on,
   checked in every build.
@@ -14,13 +17,14 @@ description: Add, upgrade or remove a tool in the sandbox image, or change its l
 
 ## Adding or upgrading a tool
 
-1. **Install it in `provision.sh`.** Prefer Debian's package: add it to the
-   `apt-get install` list. Otherwise use the project's own installer or
-   release archive, with the version pinned at the top of the script, and
-   check the download against the checksum the project publishes, when it
-   publishes one. A toolchain agents extend (more versions, targets, global
-   tools) goes in the agent's home through `as_agent`, like rustup and Bun;
-   anything else system-wide.
+1. **Install it in `provision.sh`,** in the step it belongs with. Prefer
+   Debian's package: add it to that step's `apt_install` list (`tools`,
+   `build-tools` or `media-tools`). Otherwise use the project's own
+   installer or release archive, with the version pinned at the top of the
+   script, and check the download against the checksum the project
+   publishes, when it publishes one. A toolchain agents extend (more
+   versions, targets, global tools) goes in the agent's home through
+   `as_agent`, like rustup and Bun; anything else system-wide.
 2. **Make it work from the PATH alone.** fctl-agent passes Claude the PATH,
    HOME and the locale, nothing else from the image. A tool that needs an
    environment variable gets a wrapper or a config file instead. A new PATH
@@ -30,7 +34,12 @@ description: Add, upgrade or remove a tool in the sandbox image, or change its l
    its toolchain).
 4. **List it** in README.md's "What's inside", with its version.
 5. **Say what it costs.** The Image workflow's summary lists each
-   architecture's size; put the difference in the pull request.
+   architecture's size, what hosts download and its largest layer; put the
+   difference in the pull request. Keep each layer under 200 MB
+   compressed: ghcr.io's download links expire within 5 to 10 minutes, and
+   Apple's `container` keeps nothing of a pull that broke off. A tool that
+   would take a layer past that gets a step of its own: a `step_`
+   function, its name in `STEPS` and a `RUN` in the Dockerfile.
 
 An upgrade changes the version at the top of `provision.sh` and in README.md.
 Rust follows fctl's `rust-toolchain.toml`; Claude Code and fctl aren't pinned
@@ -54,8 +63,13 @@ Removing a tool breaks images and sessions that use it: a breaking change
 - **Login shells.** Setup scripts and the Lima driver run `bash -l`, which
   reads `/etc/profile.d/fctl.sh`. Keep its PATH and the Dockerfile's
   `ENV PATH` the same.
-- **apt's lists** are removed after the first installs; a later
-  `apt-get install` needs its own `apt-get update` and cleanup.
+- **apt's lists.** Install packages with `apt_install`, which fetches the
+  lists once per run of the script; the script removes them as it ends, so
+  that no layer keeps them. A step that adds a source to apt updates the
+  lists itself, as `node` does.
+- **A layer keeps every file its step changes,** whole: a step that
+  rewrites what an earlier one installed (a `chown -R`, a reinstall, a
+  cache it refreshes) stores those files twice.
 - **Python is externally managed.** No `pip install` into the system: use
   `uv tool install` (as the agent) or a Debian package.
 - **Playwright's version is its browsers' and their libraries'.** Bumping
