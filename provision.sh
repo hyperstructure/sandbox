@@ -163,18 +163,24 @@ step_claude() {
     bash -c 'curl -fsSL https://claude.ai/install.sh | bash -s -- ${CLAUDE_VERSION:+"$CLAUDE_VERSION"}'
 }
 
-# Rust, then the components and targets that rust-toolchain.toml lists, and
+# Rust, with the components and targets that rust-toolchain.toml lists, and
 # Bun, in the agent's home: they find their files through HOME alone
 # (fctl-agent passes Claude no RUSTUP_HOME or the like), and agents add
 # toolchains, targets and global tools without sudo.
+#
+# The compiler, cargo, rustfmt and Clippy first. The standard library for
+# this machine goes, to come back in the next step with wasm32's: in one
+# layer they are over 200 MB on amd64.
 step_rust() {
   as_agent 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs |
-    sh -s -- -y --no-modify-path --profile minimal --default-toolchain "$1"' "$RUST_VERSION"
+    sh -s -- -y --no-modify-path --profile minimal --default-toolchain "$1" \
+      --component rustfmt,clippy
+    rustup target remove --toolchain "$1" "$(rustc -vV | sed -n "s/^host: //p")"' "$RUST_VERSION"
 }
 
-step_rust_extras() {
-  as_agent 'rustup component add --toolchain "$1" rustfmt clippy
-    rustup target add --toolchain "$1" wasm32-unknown-unknown' "$RUST_VERSION"
+step_rust_std() {
+  as_agent 'rustup target add --toolchain "$1" \
+    "$(rustc -vV | sed -n "s/^host: //p")" wasm32-unknown-unknown' "$RUST_VERSION"
 }
 
 step_bun() {
@@ -205,7 +211,7 @@ step_versions() {
 
 STEPS=(
   tools build-tools media-tools node browser-libraries python
-  user claude rust rust-extras bun chromium webkit versions
+  user claude rust rust-std bun chromium webkit versions
 )
 [ "$#" -gt 0 ] || set -- "${STEPS[@]}"
 for step in "$@"; do

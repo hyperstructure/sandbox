@@ -31,7 +31,7 @@ RUN bash /tmp/provision.sh python
 RUN bash /tmp/provision.sh user
 RUN bash /tmp/provision.sh claude
 RUN bash /tmp/provision.sh rust
-RUN bash /tmp/provision.sh rust-extras
+RUN bash /tmp/provision.sh rust-std
 RUN bash /tmp/provision.sh bun
 RUN bash /tmp/provision.sh chromium
 RUN bash /tmp/provision.sh webkit

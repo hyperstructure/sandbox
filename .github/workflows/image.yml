@@ -271,9 +271,13 @@ jobs:
           awk -v arch="$ARCH" '{ total += $1; n++; if ($1 > max) max = $1 }
             END { printf "%s: %.2f GB to download, in %d layers of at most %.0f MB\n", arch, total / 1e9, n, max / 1e6 }' \
             <<<"$sizes" | tee -a "$GITHUB_STEP_SUMMARY"
-          over=$(awk '$1 > 200e6' <<<"$sizes" | wc -l)
-          [ "$over" = 0 ] ||
-            echo "::warning::$over of the $ARCH image's layers are over 200 MB compressed: split the steps that make them"
+          n=0
+          while read -r size; do
+            n=$((n + 1))
+            if [ "$size" -gt 200000000 ]; then
+              echo "::warning::The $ARCH image's layer $n is $((size / 1000000)) MB compressed, over 200 MB: split the step that makes it"
+            fi
+          done <<<"$sizes"
       - name: Note its digest
         if: needs.plan.outputs.push == 'yes'
         env:
