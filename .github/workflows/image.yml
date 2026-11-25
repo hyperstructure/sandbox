@@ -267,9 +267,10 @@ jobs:
           layout="$RUNNER_TEMP/layout"
           manifest=$(jq -r '.manifests[0].digest' "$layout/index.json")
           sizes=$(jq -r '.layers[].size' "$layout/blobs/sha256/${manifest#sha256:}")
+          awk '{ printf "Layer %d: %.1f MB\n", NR, $1 / 1e6 }' <<<"$sizes"
           awk -v arch="$ARCH" '{ total += $1; n++; if ($1 > max) max = $1 }
             END { printf "%s: %.2f GB to download, in %d layers of at most %.0f MB\n", arch, total / 1e9, n, max / 1e6 }' \
-            <<<"$sizes" >> "$GITHUB_STEP_SUMMARY"
+            <<<"$sizes" | tee -a "$GITHUB_STEP_SUMMARY"
           over=$(awk '$1 > 200e6' <<<"$sizes" | wc -l)
           [ "$over" = 0 ] ||
             echo "::warning::$over of the $ARCH image's layers are over 200 MB compressed: split the steps that make them"
