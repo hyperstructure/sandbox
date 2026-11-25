@@ -22,7 +22,7 @@ to its code in hyperstructure/fctl.
 | `.github/workflows/examples.yml` | Builds the examples for both architectures and checks them with `examples/check.sh`, when they change. |
 | `kernel/` | The kernel of fctl's Firecracker sandboxes: `build.sh` builds the Linux release in `VERSION` with Firecracker's guest configuration, `check.sh` boots it in Firecracker. |
 | `.github/workflows/kernel.yml` | Builds the kernel for both architectures, boots it where there is KVM, and publishes it as `ghcr.io/hyperstructure/sandbox-kernel`. |
-| `.github/workflows/lint.yml`, `commits.yml`, `skills.yml` | ShellCheck and actionlint; pull request titles; the skills, against the Agent Skills specification. |
+| `.github/workflows/lint.yml`, `commits.yml`, `skills.yml` | ShellCheck, actionlint, and that the `Dockerfile` runs every step of `provision.sh`; pull request titles; the skills, against the Agent Skills specification. |
 | `.claude/skills/` | How to change the image, publish it, and commit. |
 
 ## Commands

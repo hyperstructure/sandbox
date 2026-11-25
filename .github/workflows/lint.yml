@@ -1,4 +1,5 @@
-# ShellCheck for the scripts, actionlint (with ShellCheck) for the workflows.
+# ShellCheck for the scripts, actionlint (with ShellCheck) for the workflows,
+# and that the Dockerfile runs every step of provision.sh.
 name: Lint
 
 on:
@@ -25,6 +26,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: ShellCheck
         run: shellcheck --version && shellcheck provision.sh check.sh check-fctl.sh examples/check.sh kernel/build.sh kernel/check.sh
+      - name: The Dockerfile runs every step
+        run: |
+          # Each in a RUN of its own, in the order of provision.sh's STEPS: a
+          # step left out would be missing from the image, though fctl's
+          # Lima driver, which runs them all, would have it.
+          steps=$(sed -n '/^STEPS=(/,/^)/{/^STEPS=(/d;/^)/d;p}' provision.sh | xargs)
+          runs=$(sed -n 's|^RUN bash /tmp/provision.sh \([a-z-]*\).*|\1|p' Dockerfile | xargs)
+          if [ -z "$steps" ] || [ "$steps" != "$runs" ]; then
+            echo "::error file=Dockerfile::The Dockerfile runs the steps '$runs', but provision.sh's STEPS are '$steps'"
+            exit 1
+          fi
+          echo "The Dockerfile runs every step: $steps"
       - name: actionlint
         run: |
           archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
