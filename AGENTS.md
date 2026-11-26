@@ -12,8 +12,8 @@ to its code in hyperstructure/fctl.
 
 | File | What it is |
 |---|---|
-| `Dockerfile` | The image: runs `provision.sh`, then sets the user and the PATH. |
-| `provision.sh` | Installs everything, as root. The versions are at the top. |
+| `Dockerfile` | The image: runs each of `provision.sh`'s steps in a layer of its own, then sets the user and the PATH. |
+| `provision.sh` | Installs everything, as root, in steps. The versions are at the top. |
 | `check.sh` | Checks a built image for the layout fctl and derived images rely on. |
 | `check-fctl.sh` | Develops fctl in a built image, as sessions working on hyperstructure/fctl do. |
 | `examples/` | Images that don't start from this one, which fctl's docs show (`ubuntu/Dockerfile`), and `check.sh`, which checks any image for what fctl needs of it. |
@@ -22,7 +22,7 @@ to its code in hyperstructure/fctl.
 | `.github/workflows/examples.yml` | Builds the examples for both architectures and checks them with `examples/check.sh`, when they change. |
 | `kernel/` | The kernel of fctl's Firecracker sandboxes: `build.sh` builds the Linux release in `VERSION` with Firecracker's guest configuration, `check.sh` boots it in Firecracker. |
 | `.github/workflows/kernel.yml` | Builds the kernel for both architectures, boots it where there is KVM, and publishes it as `ghcr.io/hyperstructure/sandbox-kernel`. |
-| `.github/workflows/lint.yml`, `commits.yml`, `skills.yml` | ShellCheck and actionlint; pull request titles; the skills, against the Agent Skills specification. |
+| `.github/workflows/lint.yml`, `commits.yml`, `skills.yml` | ShellCheck, actionlint, and that the `Dockerfile` runs every step of `provision.sh`; pull request titles; the skills, against the Agent Skills specification. |
 | `.claude/skills/` | How to change the image, publish it, and commit. |
 
 ## Commands
@@ -62,9 +62,10 @@ pull request.
   context, passing `FCTL_VERSION` and `FCTL_DOWNLOAD` as build arguments.
   With Lima, it copies `provision.sh` into a Debian 13 VM (Debian 12 with
   Lima before 2.0, and on hosts of fctl 0.14 and earlier) and runs it as
-  root with `AGENT_USER` set to the VM's user and the same variables. Keep
-  both files at the root, under these names, self-contained, and working on
-  Debian 13 and 12 with a user other than `agent`.
+  root, without arguments (every step), with `AGENT_USER` set to the VM's
+  user and the same variables. Keep both files at the root, under these
+  names, self-contained, and working on Debian 13 and 12 with a user other
+  than `agent`.
 - **The tags**: `<fctl version>` for every fctl release, `<major>.<minor>`
   and `latest`. Hosts pull their own version's tag, again every 6 hours for
   newer builds, and fall back to `latest`. They remove other versions'
@@ -119,7 +120,14 @@ hyperstructure/fctl) and, when hosts must adapt, an fctl release first.
   in the same step.
 - Mind the size: hosts download the image for every fctl release. Say in
   the pull request what a change adds; the Image workflow's summary lists
-  each architecture's size.
+  each architecture's size and, on pull requests, what hosts download and
+  its largest layer.
+- Keep each layer under 200 MB compressed (the Image workflow warns about
+  larger ones): ghcr.io's download links expire within 5 to 10 minutes,
+  and Apple's `container` keeps nothing of a pull that broke off. A tool
+  goes in the step it belongs with; one that would take a layer past that
+  gets a step of its own (a `step_` function in `provision.sh`, its name
+  in `STEPS` and a `RUN` in the `Dockerfile`).
 - `provision.sh` and `check-fctl.sh` are bash with `set -euo pipefail`;
   `check.sh` is POSIX sh. All three pass ShellCheck.
 - Workflows pin actions to a commit SHA with the version in a comment, and

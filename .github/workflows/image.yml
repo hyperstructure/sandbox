@@ -212,11 +212,14 @@ jobs:
           ARCH: ${{ matrix.arch }}
         run: |
           docker buildx create --name sandbox --driver docker-container --use >/dev/null
+          layout=()
           if [ "$PUSH" = yes ]; then
             echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
             output="type=image,name=$IMAGE,push-by-digest=true,name-canonical=true,push=true,oci-mediatypes=true"
           else
             output="type=docker,name=sandbox:check"
+            # And as an OCI layout, for its layers' compressed sizes.
+            layout=(--output "type=oci,dest=$RUNNER_TEMP/layout,tar=false")
           fi
           docker buildx build . \
             --platform "linux/$ARCH" --pull --provenance=false \
@@ -232,7 +235,7 @@ jobs:
             --label "org.opencontainers.image.created=$CREATED" \
             --label "sh.fctl.version=$VERSION" \
             --label "sh.fctl.claude-code.version=$CLAUDE" \
-            --output "$output" \
+            --output "$output" "${layout[@]}" \
             --metadata-file "$RUNNER_TEMP/build.json"
           if [ "$PUSH" = yes ]; then
             digest=$(jq -r '."containerimage.digest"' "$RUNNER_TEMP/build.json")
@@ -254,6 +257,27 @@ jobs:
           docker volume rm "$cache"
           docker image inspect --format '{{.Size}}' "$CHECK" |
             awk -v arch="$ARCH" '{ printf "%s: %.2f GB\n", arch, $1 / 1e9 }' >> "$GITHUB_STEP_SUMMARY"
+      - name: Its layers
+        if: needs.plan.outputs.push != 'yes'
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          # What hosts download. ghcr.io's download links expire within 5 to
+          # 10 minutes, so a large layer may never arrive (the Dockerfile).
+          layout="$RUNNER_TEMP/layout"
+          manifest=$(jq -r '.manifests[0].digest' "$layout/index.json")
+          sizes=$(jq -r '.layers[].size' "$layout/blobs/sha256/${manifest#sha256:}")
+          awk '{ printf "Layer %d: %.1f MB\n", NR, $1 / 1e6 }' <<<"$sizes"
+          awk -v arch="$ARCH" '{ total += $1; n++; if ($1 > max) max = $1 }
+            END { printf "%s: %.2f GB to download, in %d layers of at most %.0f MB\n", arch, total / 1e9, n, max / 1e6 }' \
+            <<<"$sizes" | tee -a "$GITHUB_STEP_SUMMARY"
+          n=0
+          while read -r size; do
+            n=$((n + 1))
+            if [ "$size" -gt 200000000 ]; then
+              echo "::warning::The $ARCH image's layer $n is $((size / 1000000)) MB compressed, over 200 MB: split the step that makes it"
+            fi
+          done <<<"$sizes"
       - name: Note its digest
         if: needs.plan.outputs.push == 'yes'
         env:

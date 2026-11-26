@@ -17,7 +17,25 @@ ARG FCTL_DOWNLOAD=
 ARG CLAUDE_VERSION=
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8 TZ=UTC
 COPY provision.sh /tmp/provision.sh
-RUN bash /tmp/provision.sh && rm /tmp/provision.sh
+# Each of provision.sh's steps makes a layer of its own, none over about
+# 200 MB compressed: ghcr.io sends each layer's download to a link that
+# expires within 5 to 10 minutes, and closes the connection then, and Apple's
+# container keeps nothing of a pull that broke off. One layer of 1.3 GB never
+# arrived at 2.4 MB/s.
+RUN bash /tmp/provision.sh tools
+RUN bash /tmp/provision.sh build-tools
+RUN bash /tmp/provision.sh media-tools
+RUN bash /tmp/provision.sh node
+RUN bash /tmp/provision.sh browser-libraries
+RUN bash /tmp/provision.sh python
+RUN bash /tmp/provision.sh user
+RUN bash /tmp/provision.sh claude
+RUN bash /tmp/provision.sh rust
+RUN bash /tmp/provision.sh rust-std
+RUN bash /tmp/provision.sh bun
+RUN bash /tmp/provision.sh chromium
+RUN bash /tmp/provision.sh webkit
+RUN bash /tmp/provision.sh versions && rm /tmp/provision.sh
 
 USER agent
 WORKDIR /home/agent
